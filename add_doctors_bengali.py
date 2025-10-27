@@ -11,7 +11,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'diagcenter.settings')
 django.setup()
 
 from django.contrib.auth import get_user_model
-from accounts.models import Doctor
 
 User = get_user_model()
 
@@ -97,8 +96,16 @@ for doctor_data in doctors_data:
     
     # Check if user already exists
     if User.objects.filter(username=username).exists():
-        print(f"⚠️  User '{username}' already exists. Skipping...")
+        print(f"⚠️  User '{username}' already exists. Updating...")
         user = User.objects.get(username=username)
+        user.first_name = doctor_data['first_name']
+        user.last_name = doctor_data['last_name']
+        user.email = doctor_data['email']
+        user.role = 'DOCTOR'
+        user.is_active = True
+        user.specialization = doctor_data['specialization']
+        user.save()
+        print(f"✓ Updated user: {username}")
     else:
         # Create user
         user = User.objects.create_user(
@@ -107,31 +114,13 @@ for doctor_data in doctors_data:
             password=doctor_data['password'],
             first_name=doctor_data['first_name'],
             last_name=doctor_data['last_name'],
-            is_doctor=True,
-            is_active=True
+            role='DOCTOR',
+            is_active=True,
+            specialization=doctor_data['specialization']
         )
         print(f"✓ Created user: {username}")
     
-    # Create or update doctor profile
-    doctor, created = Doctor.objects.update_or_create(
-        user=user,
-        defaults={
-            'name_bengali': doctor_data['name_bengali'],
-            'name_english': doctor_data['name_english'],
-            'specialization': doctor_data['specialization'],
-            'specialization_english': doctor_data['specialization_english'],
-            'qualifications': doctor_data['qualifications'],
-            'qualifications_english': doctor_data['qualifications_english'],
-            'schedule': doctor_data['schedule'],
-            'schedule_english': doctor_data['schedule_english'],
-            'available_days': doctor_data['available_days'],
-            'consultation_fee': doctor_data['consultation_fee'],
-            'is_active': True,
-        }
-    )
-    
-    action = "Created" if created else "Updated"
-    print(f"✓ {action} doctor profile: {doctor_data['name_bengali']}")
+    print(f"  Name: {doctor_data['name_bengali']} ({doctor_data['name_english']})")
     print(f"  Username: {username}")
     print(f"  Password: {doctor_data['password']}")
     print(f"  Email: {doctor_data['email']}")
