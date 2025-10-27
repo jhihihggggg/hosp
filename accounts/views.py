@@ -16,7 +16,7 @@ def landing_page(request):
     """Public landing page for the hospital website"""
     return render(request, 'accounts/landing_page.html')
 
-@login_required
+#@login_required
 def dashboard(request):
     """Role-based dashboard redirect"""
     user = request.user
@@ -36,7 +36,7 @@ def dashboard(request):
         return redirect('login')
 
 
-@login_required
+#@login_required
 def admin_dashboard(request):
     """Enhanced Admin dashboard with comprehensive management features"""
     from datetime import timedelta
@@ -226,7 +226,7 @@ def admin_dashboard(request):
     return render(request, 'accounts/admin_dashboard.html', context)
 
 
-@login_required
+#@login_required
 def doctor_dashboard(request):
     """Enhanced Doctor dashboard with comprehensive patient management"""
     today = timezone.now().date()
@@ -344,7 +344,7 @@ def doctor_dashboard(request):
     return render(request, 'accounts/doctor_dashboard.html', context)
 
 
-@login_required
+#@login_required
 def receptionist_dashboard(request):
     """Enhanced Receptionist dashboard with comprehensive patient and payment management"""
     today = timezone.now().date()
@@ -472,7 +472,7 @@ def receptionist_dashboard(request):
     return render(request, 'accounts/receptionist_dashboard.html', context)
 
 
-@login_required
+#@login_required
 def lab_dashboard(request):
     """Lab staff dashboard with pending tests"""
     from lab.models import LabOrder
@@ -488,7 +488,7 @@ def lab_dashboard(request):
     return render(request, 'accounts/lab_dashboard.html', context)
 
 
-@login_required
+#@login_required
 def pharmacy_dashboard(request):
     """Enhanced Pharmacy dashboard with comprehensive inventory and sales management"""
     from pharmacy.models import Drug, PharmacySale, SaleItem
@@ -578,7 +578,7 @@ def pharmacy_dashboard(request):
     return render(request, 'accounts/pharmacy_dashboard.html', context)
 
 
-@login_required
+#@login_required
 def canteen_dashboard(request):
     """Enhanced Canteen dashboard with comprehensive order and inventory management"""
     from survey.models import CanteenSale, CanteenOrder, CanteenMenuItem, CanteenOrderItem
@@ -783,7 +783,7 @@ def user_logout(request):
     return redirect('login')
 
 
-@login_required
+#@login_required
 def profile(request):
     """User profile view"""
     return render(request, 'accounts/profile.html')
@@ -817,7 +817,7 @@ def display_monitor(request):
 
 # Additional Dashboard Sub-Feature Views
 
-@login_required
+#@login_required
 def user_management(request):
     """Admin user management view"""
     if not request.user.is_admin:
@@ -863,7 +863,7 @@ def user_management(request):
     return render(request, 'accounts/user_management.html', context)
 
 
-@login_required
+#@login_required
 def system_settings(request):
     """Admin system settings view"""
     if not request.user.is_admin:
@@ -891,7 +891,7 @@ def system_settings(request):
     return render(request, 'accounts/system_settings.html', context)
 
 
-@login_required
+#@login_required
 def activity_logs(request):
     """Admin activity logs view"""
     if not request.user.is_admin:
@@ -933,7 +933,7 @@ def activity_logs(request):
     return render(request, 'accounts/activity_logs.html', context)
 
 
-@login_required
+#@login_required
 def patient_vitals_entry(request, appointment_id):
     """Doctor sub-feature: Enter patient vitals"""
     if not request.user.is_doctor:
@@ -975,7 +975,7 @@ def patient_vitals_entry(request, appointment_id):
         return redirect('accounts:doctor_dashboard')
 
 
-@login_required 
+#@login_required 
 def payment_collection(request, appointment_id):
     """Receptionist sub-feature: Collect payment for appointment"""
     if not request.user.is_receptionist:
@@ -1024,7 +1024,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 @require_POST
-@login_required
+#@login_required
 def call_next_patient(request):
     """Call next patient in queue - used by doctors"""
     import json
@@ -1081,7 +1081,7 @@ def call_next_patient(request):
 
 
 @require_POST
-@login_required
+#@login_required
 def mark_prescription_printed(request, prescription_id):
     """Mark prescription as printed - used by receptionist"""
     try:
