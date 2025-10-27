@@ -12,6 +12,10 @@ from pharmacy.models import Drug, PharmacySale, SaleItem
 from finance.models import Income, Expense, Investor
 from survey.models import CanteenSale, FeedbackSurvey
 
+def landing_page(request):
+    """Public landing page for the hospital website"""
+    return render(request, 'accounts/landing_page.html')
+
 @login_required
 def dashboard(request):
     """Role-based dashboard redirect"""
