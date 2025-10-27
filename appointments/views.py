@@ -1,7 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
+from django.utils import timezone
 from .models import Appointment, Prescription, Medicine
+from patients.models import Patient
+
+def public_booking(request):
+    """Public appointment booking page (no login required)"""
+    return render(request, 'appointments/public_booking.html')
 
 @login_required
 def appointment_list(request):

@@ -4,6 +4,10 @@ from . import views
 app_name = 'appointments'
 
 urlpatterns = [
+    # Public booking (no login required)
+    path('book/', views.public_booking, name='public_booking'),
+    
+    # Staff-only URLs (login required)
     path('', views.appointment_list, name='appointment_list'),
     path('create/', views.appointment_create, name='appointment_create'),
     path('<int:pk>/', views.appointment_detail, name='appointment_detail'),
