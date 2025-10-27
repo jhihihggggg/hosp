@@ -38,24 +38,20 @@ mkdir -p media/patient_photos
 mkdir -p staticfiles
 mkdir -p logs
 
-# Fix permissions first (so Django can create database)
+# Set proper ownership immediately
 echo ""
-echo "🔒 Setting initial permissions..."
+echo "🔒 Setting directory ownership..."
 sudo chown -R www-data:www-data $APP_DIR
-sudo chmod -R 755 $APP_DIR
-# Allow current user to also work with files
-sudo chmod -R g+w $APP_DIR
-sudo usermod -a -G www-data $(whoami) || true
 
-# Run migrations
+# Run migrations (as root, but Django will create files as www-data)
 echo ""
 echo "🗄️  Running database migrations..."
-sudo -u www-data $APP_DIR/venv/bin/python manage.py migrate --settings=diagcenter.production_settings --noinput
+python manage.py migrate --settings=diagcenter.production_settings --noinput
 
 # Collect static files
 echo ""
 echo "📁 Collecting static files..."
-sudo -u www-data $APP_DIR/venv/bin/python manage.py collectstatic --settings=diagcenter.production_settings --noinput
+python manage.py collectstatic --settings=diagcenter.production_settings --noinput
 
 # Create superuser prompt
 echo ""
@@ -63,7 +59,7 @@ echo "👤 Do you want to create a superuser now? (y/n)"
 read -p "Create superuser? " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo -u www-data $APP_DIR/venv/bin/python manage.py createsuperuser --settings=diagcenter.production_settings
+    python manage.py createsuperuser --settings=diagcenter.production_settings
 fi
 
 # Final permissions fix
@@ -71,8 +67,9 @@ echo ""
 echo "🔒 Final permissions check..."
 sudo chown -R www-data:www-data $APP_DIR
 sudo chmod -R 755 $APP_DIR
+sudo chmod -R 775 $APP_DIR/data
+sudo chmod -R 775 $APP_DIR/media
 sudo chmod 664 $APP_DIR/data/db_production.sqlite3 2>/dev/null || true
-sudo chmod 775 $APP_DIR/data 2>/dev/null || true
 
 # Setup systemd service
 echo ""
