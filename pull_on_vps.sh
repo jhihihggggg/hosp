@@ -9,23 +9,29 @@ echo "================================"
 echo "🚀 Deploying from GitHub..."
 echo "================================"
 
-# Configuration
-APP_DIR="/var/www/nazipuruhs"
+# Configuration - Use current directory
+APP_DIR="$(pwd)"
+APP_NAME="$(basename $APP_DIR)"
 SERVICE_NAME="nazipuruhs"
-BACKUP_DIR="/var/backups/nazipuruhs"
+BACKUP_DIR="/var/backups/$APP_NAME"
 
 # Create backup directory if needed
 mkdir -p $BACKUP_DIR
 
 echo ""
 echo "📦 Step 1: Stopping service..."
-sudo systemctl stop $SERVICE_NAME || echo "Service not running"
+if systemctl is-active --quiet $SERVICE_NAME; then
+    sudo systemctl stop $SERVICE_NAME
+    echo "Service stopped"
+else
+    echo "Service not running (will set up later)"
+fi
 
 echo ""
 echo "💾 Step 2: Creating backup..."
 BACKUP_FILE="$BACKUP_DIR/backup_$(date +%Y%m%d_%H%M%S).tar.gz"
-cd /var/www
-tar -czf $BACKUP_FILE nazipuruhs/db.sqlite3 nazipuruhs/media/ 2>/dev/null || echo "Backup created"
+cd $(dirname $APP_DIR)
+tar -czf $BACKUP_FILE $APP_NAME/db.sqlite3 $APP_NAME/media/ 2>/dev/null || echo "Backup created"
 
 echo ""
 echo "⬇️  Step 3: Pulling latest code from GitHub..."
@@ -53,8 +59,20 @@ sudo chown -R www-data:www-data $APP_DIR
 sudo chmod -R 755 $APP_DIR
 
 echo ""
-echo "▶️  Step 8: Starting service..."
+echo "⚙️  Step 8: Setting up systemd service..."
+# Update service file with current directory
+sed -i "s|WorkingDirectory=.*|WorkingDirectory=$APP_DIR|g" $APP_DIR/hosp.service
+sed -i "s|ExecStart=.*|ExecStart=$APP_DIR/venv/bin/gunicorn --config $APP_DIR/gunicorn_config.py diagcenter.wsgi:application|g" $APP_DIR/hosp.service
+
+# Copy service file if not exists or update it
+sudo cp $APP_DIR/hosp.service /etc/systemd/system/$SERVICE_NAME.service
+sudo systemctl daemon-reload
+sudo systemctl enable $SERVICE_NAME
+
+echo ""
+echo "▶️  Step 9: Starting service..."
 sudo systemctl start $SERVICE_NAME
+sleep 2
 sudo systemctl status $SERVICE_NAME --no-pager
 
 echo ""
