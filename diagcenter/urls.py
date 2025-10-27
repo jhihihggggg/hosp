@@ -25,9 +25,6 @@ from accounts import views as account_views
 urlpatterns = [
     path("admin/", admin.site.urls),
     
-    # Public landing page
-    path("", account_views.landing_page, name="home"),
-    
     # Authentication URLs (at root level for easy access)
     path("login/", account_views.user_login, name="login"),
     path("logout/", account_views.user_logout, name="logout"),
@@ -43,6 +40,9 @@ urlpatterns = [
     
     # API URLs
     path("api/", include("diagcenter.api_urls")),
+    
+    # Redirect root to login or dashboard
+    path("", RedirectView.as_view(url="/login/", permanent=False), name="home"),
 ]
 
 # Serve media files in development

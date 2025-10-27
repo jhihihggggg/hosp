@@ -12,24 +12,6 @@ from pharmacy.models import Drug, PharmacySale, SaleItem
 from finance.models import Income, Expense, Investor
 from survey.models import CanteenSale, FeedbackSurvey
 
-
-def landing_page(request):
-    """Public landing page with quick access to book appointments"""
-    # If user is already logged in, redirect to their dashboard
-    if request.user.is_authenticated:
-        return redirect('accounts:dashboard')
-    
-    # Get count of doctors for display
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    doctors = User.objects.filter(role='DOCTOR', is_active=True).order_by('first_name')
-    
-    return render(request, 'accounts/landing_page.html', {
-        'doctors': doctors,
-        'doctors_count': doctors.count()
-    })
-
-
 @login_required
 def dashboard(request):
     """Role-based dashboard redirect"""
@@ -45,10 +27,6 @@ def dashboard(request):
         return redirect('accounts:lab_dashboard')
     elif user.is_pharmacy_staff:
         return redirect('accounts:pharmacy_dashboard')
-    elif user.is_canteen_staff:
-        return redirect('accounts:canteen_dashboard')
-    elif user.is_display:
-        return redirect('appointments:display_monitor')
     else:
         messages.error(request, "You don't have permission to access any dashboard.")
         return redirect('login')
@@ -140,8 +118,8 @@ def admin_dashboard(request):
     
     # Staff statistics
     total_staff = User.objects.filter(is_active=True).count()
-    doctors_count = User.objects.filter(role='DOCTOR', is_active=True).count()
-    nurses_count = User.objects.filter(role='NURSE', is_active=True).count()
+    doctors_count = User.objects.filter(is_doctor=True, is_active=True).count()
+    nurses_count = User.objects.filter(is_nurse=True, is_active=True).count()
     other_staff = total_staff - doctors_count - nurses_count
     
     # Department performance
@@ -169,14 +147,12 @@ def admin_dashboard(request):
     active_investors = investors.filter(is_active=True).count()
     
     # Outstanding payments and dues
-    # Lab orders not yet paid
     outstanding_lab_payments = LabOrder.objects.filter(
-        is_paid=False
+        payment_status='pending'
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
-    # Pharmacy sales with amount still due (partial or unpaid)
     outstanding_pharmacy_payments = PharmacySale.objects.filter(
-        amount_paid__lt=F('total_amount')
+        payment_status__in=['pending', 'partial']
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
     # Recent transactions (last 15 for better overview)
@@ -411,27 +387,25 @@ def receptionist_dashboard(request):
         source='appointment'
     ).aggregate(Sum('amount'))['amount__sum'] or 0
     
-    # Outstanding appointments (recent appointments still not completed) --
-    # Note: Appointment model does not have a payment_status or consultation_fee field
-    # so we keep a safe, non-breaking view of recent non-completed appointments instead.
+    # Outstanding payments (appointments not paid)
     outstanding_appointments = Appointment.objects.filter(
         appointment_date__gte=today - timedelta(days=30),
-        status__in=['WAITING', 'CALLED', 'IN_PROGRESS']
+        payment_status='pending'
     ).select_related('patient', 'doctor')
-
-    # consultation_fee is tracked separately (see Finance models). For the dashboard
-    # we avoid aggregating a non-existent field here and set outstanding_amount to 0.
-    outstanding_amount = 0
     
-    # Lab orders requiring payment (not paid)
+    outstanding_amount = outstanding_appointments.aggregate(
+        Sum('consultation_fee')
+    )['consultation_fee__sum'] or 0
+    
+    # Lab orders requiring payment
     unpaid_lab_orders = LabOrder.objects.filter(
-        is_paid=False,
+        payment_status='pending',
         ordered_at__date__gte=today - timedelta(days=7)
     ).select_related('appointment__patient')[:10]
     
-    # Pharmacy sales requiring collection (amount still due)
+    # Pharmacy sales requiring collection
     unpaid_pharmacy_sales = PharmacySale.objects.filter(
-        amount_paid__lt=F('total_amount'),
+        payment_status__in=['pending', 'partial'],
         sale_date__date__gte=today - timedelta(days=7)
     ).select_related('prescription__appointment__patient')[:10]
     
@@ -576,9 +550,9 @@ def pharmacy_dashboard(request):
         stock_quantity__gt=0
     ).order_by('stock_quantity')[:10]
     
-    # Payment status summary: sum of sales where amount still due
+    # Payment status summary
     pending_payments = PharmacySale.objects.filter(
-        amount_paid__lt=F('total_amount')
+        payment_status__in=['pending', 'partial']
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
     context = {
@@ -602,13 +576,13 @@ def pharmacy_dashboard(request):
 
 @login_required
 def canteen_dashboard(request):
-    """Enhanced Canteen dashboard with comprehensive sales and inventory management"""
-    from survey.models import CanteenSale, CanteenItem, CanteenSaleItem
+    """Enhanced Canteen dashboard with comprehensive order and inventory management"""
+    from survey.models import CanteenSale, CanteenOrder, CanteenMenuItem, CanteenOrderItem
     
     today = timezone.now().date()
     
-    # Sales statistics
-    today_orders = CanteenSale.objects.filter(sale_date__date=today).count()
+    # Order statistics
+    today_orders = CanteenOrder.objects.filter(order_date__date=today).count()
     
     # Revenue calculations
     today_revenue = CanteenSale.objects.filter(sale_date__date=today).aggregate(
@@ -621,46 +595,72 @@ def canteen_dashboard(request):
         sale_date__date__gte=week_start
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
-    # Recent sales (acting as active orders)
-    active_orders_list = CanteenSale.objects.filter(
-        sale_date__date=today
-    ).select_related('patient', 'served_by').order_by('-sale_date')[:20]
+    # Active orders (pending, preparing, ready)
+    active_orders_list = CanteenOrder.objects.filter(
+        order_date__date=today,
+        status__in=['pending', 'preparing', 'ready']
+    ).select_related('customer').order_by('order_time')
     
     active_orders_count = active_orders_list.count()
     
-    # Completed orders today (all sales for today)
-    completed_orders = CanteenSale.objects.filter(
-        sale_date__date=today
-    ).order_by('-sale_date')[:15]
+    # Orders by status
+    pending_orders = active_orders_list.filter(status='pending').count()
+    preparing_orders = active_orders_list.filter(status='preparing').count()
+    ready_orders = active_orders_list.filter(status='ready').count()
     
-    # Popular items today (from sale items)
-    popular_items_today = CanteenSaleItem.objects.filter(
-        sale__sale_date__date=today
+    # Completed orders today
+    completed_orders = CanteenOrder.objects.filter(
+        order_date__date=today,
+        status='delivered'
+    ).select_related('customer').order_by('-order_time')[:15]
+    
+    # Popular items today
+    popular_items_today = CanteenOrderItem.objects.filter(
+        order__order_date__date=today
     ).values(
-        'item__name'
+        'menu_item__name'
     ).annotate(
         quantity_sold=Sum('quantity'),
-        revenue=Sum('total_price')
+        revenue=Sum(F('quantity') * F('unit_price'))
     ).order_by('-quantity_sold')[:5]
     
     # Menu management statistics
-    total_menu_items = CanteenItem.objects.filter(is_available=True).count()
-    out_of_stock_items = CanteenItem.objects.filter(
+    total_menu_items = CanteenMenuItem.objects.filter(is_available=True).count()
+    out_of_stock_items = CanteenMenuItem.objects.filter(
         is_available=False
     ).count()
     
-    # Items that might need restocking (simple availability check)
-    low_stock_items = CanteenItem.objects.filter(
-        is_available=False
+    # Low stock alerts (items with stock < 10)
+    low_stock_items = CanteenMenuItem.objects.filter(
+        stock_quantity__lt=10,
+        is_available=True
     )[:10]
     
-    # Customer satisfaction (overall feedback)
-    customer_ratings = FeedbackSurvey.objects.filter(
-        submitted_at__date__gte=today - timedelta(days=7)
+    # Staff efficiency metrics
+    avg_preparation_time = CanteenOrder.objects.filter(
+        order_date__date=today,
+        status='delivered'
     ).aggregate(
-        avg_rating=Avg('overall_experience'),
+        avg_time=Avg(F('delivery_time') - F('order_time'))
+    )['avg_time']
+    
+    # Customer satisfaction (if feedback available)
+    customer_ratings = FeedbackSurvey.objects.filter(
+        canteen_rating__isnull=False,
+        created_at__date__gte=today - timedelta(days=7)
+    ).aggregate(
+        avg_rating=Avg('canteen_rating'),
         total_reviews=Count('id')
     )
+    
+    # Peak hours analysis (orders by hour)
+    hourly_orders = CanteenOrder.objects.filter(
+        order_date__date=today
+    ).extra(
+        select={'hour': 'EXTRACT(hour FROM order_time)'}
+    ).values('hour').annotate(
+        order_count=Count('id')
+    ).order_by('hour')
     
     # Revenue breakdown by payment method
     payment_methods = CanteenSale.objects.filter(
@@ -670,28 +670,21 @@ def canteen_dashboard(request):
         count=Count('id')
     )
     
-    # Top customers (frequent buyers this month)
-    top_customers = CanteenSale.objects.filter(
-        sale_date__date__gte=today - timedelta(days=30)
+    # Waste tracking (expired/unsold items)
+    waste_items = CanteenMenuItem.objects.filter(
+        expiry_date__lt=today,
+        stock_quantity__gt=0
+    )
+    
+    # Top customers (frequent buyers)
+    top_customers = CanteenOrder.objects.filter(
+        order_date__date__gte=today - timedelta(days=30)
     ).values(
-        'customer_name', 'patient__patient_id'
+        'customer_name', 'customer_phone'
     ).annotate(
         order_count=Count('id'),
         total_spent=Sum('total_amount')
     ).order_by('-total_spent')[:5]
-    
-    # Daily sales trend (last 7 days)
-    daily_sales = []
-    for i in range(7):
-        date = today - timedelta(days=i)
-        sales = CanteenSale.objects.filter(sale_date__date=date).aggregate(
-            total=Sum('total_amount')
-        )['total'] or 0
-        daily_sales.append({
-            'date': date,
-            'sales': sales
-        })
-    daily_sales.reverse()
     
     context = {
         'today_orders': today_orders,
@@ -699,15 +692,20 @@ def canteen_dashboard(request):
         'weekly_revenue': weekly_revenue,
         'active_orders': active_orders_count,
         'active_orders_list': active_orders_list,
+        'pending_orders': pending_orders,
+        'preparing_orders': preparing_orders,
+        'ready_orders': ready_orders,
         'completed_orders': completed_orders,
         'popular_items_today': popular_items_today,
         'total_menu_items': total_menu_items,
         'out_of_stock_items': out_of_stock_items,
         'low_stock_items': low_stock_items,
+        'avg_preparation_time': avg_preparation_time,
         'customer_ratings': customer_ratings,
+        'hourly_orders': hourly_orders,
         'payment_methods': payment_methods,
+        'waste_items': waste_items,
         'top_customers': top_customers,
-        'daily_sales': daily_sales,
     }
     
     return render(request, 'accounts/canteen_dashboard.html', context)
@@ -723,14 +721,12 @@ def user_login(request):
             return redirect('accounts:doctor_dashboard')
         elif request.user.is_receptionist:
             return redirect('accounts:receptionist_dashboard')
-        elif request.user.is_lab_staff:
+        elif request.user.is_lab:
             return redirect('accounts:lab_dashboard')
-        elif request.user.is_pharmacy_staff:
+        elif request.user.is_pharmacy:
             return redirect('accounts:pharmacy_dashboard')
-        elif request.user.is_canteen_staff:
+        elif request.user.is_canteen:
             return redirect('accounts:canteen_dashboard')
-        elif request.user.is_display:
-            return redirect('appointments:display_monitor')
         else:
             return redirect('accounts:profile')
     
@@ -755,14 +751,12 @@ def user_login(request):
                 return redirect('accounts:doctor_dashboard')
             elif user.is_receptionist:
                 return redirect('accounts:receptionist_dashboard')
-            elif user.is_lab_staff:
+            elif user.is_lab:
                 return redirect('accounts:lab_dashboard')
-            elif user.is_pharmacy_staff:
+            elif user.is_pharmacy:
                 return redirect('accounts:pharmacy_dashboard')
-            elif user.is_canteen_staff:
+            elif user.is_canteen:
                 return redirect('accounts:canteen_dashboard')
-            elif user.is_display:
-                return redirect('appointments:display_monitor')
             else:
                 return redirect('accounts:profile')
         else:
@@ -831,13 +825,13 @@ def user_management(request):
     inactive_users = total_users - active_users
     
     # Users by role
-    admins = all_users.filter(role='ADMIN').count()
-    doctors = all_users.filter(role='DOCTOR').count()
-    nurses = all_users.filter(role='NURSE').count()
-    receptionists = all_users.filter(role='RECEPTIONIST').count()
-    lab_staff = all_users.filter(role='LAB').count()
-    pharmacy_staff = all_users.filter(role='PHARMACY').count()
-    canteen_staff = all_users.filter(role='CANTEEN').count()
+    admins = all_users.filter(is_admin=True).count()
+    doctors = all_users.filter(is_doctor=True).count()
+    nurses = all_users.filter(is_nurse=True).count()
+    receptionists = all_users.filter(is_receptionist=True).count()
+    lab_staff = all_users.filter(is_lab_staff=True).count()
+    pharmacy_staff = all_users.filter(is_pharmacy_staff=True).count()
+    canteen_staff = all_users.filter(is_canteen_staff=True).count()
     
     context = {
         'all_users': all_users,
@@ -994,8 +988,9 @@ def payment_collection(request, appointment_id):
                 collected_by=request.user
             )
             
-            # Payment recorded in Income; appointment payment status is tracked via finance records.
-            # (Appointment model does not have a payment_status field.)
+            # Update appointment payment status
+            appointment.payment_status = 'paid'
+            appointment.save()
             
             messages.success(request, f"Payment of ₹{payment_amount} collected successfully!")
             return redirect('accounts:receptionist_dashboard')

@@ -1,0 +1,232 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║   🏥 NAZIPURUHS.COM - GITHUB DEPLOYMENT WORKFLOW (Updated)      ║
+║                                                                  ║
+║           Push to GitHub → VPS Pulls from GitHub                ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+✅ WORKFLOW UPDATED TO USE GITHUB
+═══════════════════════════════════════════════════════════════════
+
+OLD WAY (Removed):
+  Local → SCP upload → VPS ✗
+
+NEW WAY (Proper Git Workflow):
+  Local → Git Push → GitHub → Git Pull → VPS ✓
+
+═══════════════════════════════════════════════════════════════════
+🎯 SETUP (One-Time Only)
+═══════════════════════════════════════════════════════════════════
+
+STEP 1: Create GitHub Repository
+─────────────────────────────────
+1. Go to: https://github.com/new
+2. Create repository: "hosp" (or any name)
+3. Make it Private or Public
+4. Don't initialize with README (we have code already)
+
+
+STEP 2: Setup Git Locally
+─────────────────────────────────
+cd /workspaces/hosp
+
+# Initialize git and add GitHub remote
+./setup_git.sh
+
+# Add your GitHub repository
+git remote add origin https://github.com/YOUR_USERNAME/hosp.git
+
+# Push initial code
+git push -u origin main
+
+
+STEP 3: Setup VPS (First Time Only)
+─────────────────────────────────
+ssh root@nazipuruhs.com
+
+# Upload and run first-time setup script
+# (Upload vps_first_time_setup.sh from local first)
+
+cd /root
+bash vps_first_time_setup.sh
+
+# It will ask for your GitHub repository URL
+# Enter: https://github.com/YOUR_USERNAME/hosp.git
+
+═══════════════════════════════════════════════════════════════════
+🚀 DAILY DEPLOYMENT (After Setup)
+═══════════════════════════════════════════════════════════════════
+
+METHOD 1: ONE-CLICK (Recommended) ⭐
+────────────────────────────────────
+./deploy_now.sh
+
+That's it! This will:
+  1. Commit your changes
+  2. Push to GitHub
+  3. SSH to VPS
+  4. Pull from GitHub
+  5. Deploy automatically
+
+
+METHOD 2: MANUAL (2 Steps)
+────────────────────────────────────
+LOCAL:
+  ./push_to_vps.sh
+
+VPS:
+  ssh root@nazipuruhs.com
+  cd /var/www/nazipuruhs
+  bash pull_from_repo.sh
+
+
+METHOD 3: PURE GIT
+────────────────────────────────────
+LOCAL:
+  git add .
+  git commit -m "Your message"
+  git push origin main
+
+VPS:
+  ssh root@nazipuruhs.com
+  cd /var/www/nazipuruhs
+  git pull origin main
+  source venv/bin/activate
+  python manage.py migrate --settings=diagcenter.production_settings
+  python manage.py collectstatic --noinput --settings=diagcenter.production_settings
+  sudo systemctl restart nazipuruhs
+
+═══════════════════════════════════════════════════════════════════
+📦 UPDATED FILES
+═══════════════════════════════════════════════════════════════════
+
+✓ push_to_vps.sh              → Now pushes to GitHub (not SCP)
+✓ pull_from_repo.sh           → Now pulls from GitHub (not tar)
+✓ deploy_now.sh               → Updated for GitHub workflow
+✓ vps_first_time_setup.sh     → NEW! First-time VPS setup
+✓ setup_git.sh                → Initialize Git repository
+
+═══════════════════════════════════════════════════════════════════
+📖 WORKFLOW DIAGRAM
+═══════════════════════════════════════════════════════════════════
+
+  YOUR COMPUTER              GITHUB              VPS SERVER
+  ─────────────             ───────             ──────────
+       Code
+        │
+        │ git push
+        │
+        ├──────────────────→ Repository ──────────────┐
+        │                                              │
+        │                                        git pull
+        │                                              │
+        │                                              ▼
+        │                                     /var/www/nazipuruhs
+        │                                              │
+        │                                              │
+        │                                       Deploy & Restart
+        │                                              │
+        │                                              ▼
+        │                                     nazipuruhs.com:8005
+        │
+        └──────────────────────────────────────────────┘
+                  (One command: ./deploy_now.sh)
+
+═══════════════════════════════════════════════════════════════════
+✅ ADVANTAGES OF GITHUB WORKFLOW
+═══════════════════════════════════════════════════════════════════
+
+✓ Version Control - Full Git history
+✓ Collaboration - Team members can contribute
+✓ Rollback - Easy to revert to previous versions
+✓ Security - No need to SCP files
+✓ CI/CD Ready - Can add GitHub Actions later
+✓ Backup - Code is backed up on GitHub
+✓ Standard Practice - Industry standard workflow
+
+═══════════════════════════════════════════════════════════════════
+🔧 COMMANDS REFERENCE
+═══════════════════════════════════════════════════════════════════
+
+Setup (Once):
+─────────────
+./setup_git.sh
+git remote add origin https://github.com/YOUR_USERNAME/hosp.git
+git push -u origin main
+
+Deploy (Daily):
+─────────────
+./deploy_now.sh
+
+Or Manual:
+─────────────
+./push_to_vps.sh                    # On local
+ssh root@nazipuruhs.com
+cd /var/www/nazipuruhs
+bash pull_from_repo.sh              # On VPS
+
+Check Status (VPS):
+─────────────
+systemctl status nazipuruhs
+journalctl -u nazipuruhs -f
+
+═══════════════════════════════════════════════════════════════════
+🐛 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════
+
+Problem: "No GitHub remote configured"
+Solution:
+  git remote add origin https://github.com/YOUR_USERNAME/hosp.git
+
+Problem: "Git repository not initialized"
+Solution:
+  ./setup_git.sh
+
+Problem: "Permission denied (publickey)" when pushing to GitHub
+Solution:
+  1. Generate SSH key: ssh-keygen -t ed25519 -C "your@email.com"
+  2. Add to GitHub: cat ~/.ssh/id_ed25519.pub
+  3. Or use HTTPS: git remote set-url origin https://github.com/...
+
+Problem: VPS can't pull from private repo
+Solution:
+  On VPS, generate SSH key and add to GitHub:
+  ssh-keygen -t ed25519
+  cat ~/.ssh/id_ed25519.pub
+  # Add this key to GitHub → Settings → SSH Keys
+
+═══════════════════════════════════════════════════════════════════
+📋 QUICK START CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+LOCAL SETUP:
+[ ] Create GitHub repository
+[ ] Run: ./setup_git.sh
+[ ] Run: git remote add origin https://github.com/YOUR_USERNAME/hosp.git
+[ ] Run: git push -u origin main
+
+VPS SETUP (First Time):
+[ ] Upload vps_first_time_setup.sh to VPS
+[ ] Run: bash vps_first_time_setup.sh
+[ ] Enter GitHub repository URL when prompted
+[ ] Create superuser account
+[ ] Install SSL certificate (optional)
+
+DAILY DEPLOYMENT:
+[ ] Make code changes
+[ ] Run: ./deploy_now.sh
+[ ] Verify site is working
+
+═══════════════════════════════════════════════════════════════════
+🎉 READY TO USE!
+═══════════════════════════════════════════════════════════════════
+
+1. Setup Git and GitHub (one time)
+2. Setup VPS (one time)
+3. Deploy: ./deploy_now.sh (every time you update)
+
+Access your site: https://nazipuruhs.com
+
+═══════════════════════════════════════════════════════════════════

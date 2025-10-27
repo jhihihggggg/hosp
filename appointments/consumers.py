@@ -137,7 +137,6 @@ class DisplayMonitorConsumer(AsyncWebsocketConsumer):
         )
         
         await self.accept()
-        print(f"Display monitor connected: {self.channel_name}")
     
     async def disconnect(self, close_code):
         # Leave room group
@@ -145,19 +144,16 @@ class DisplayMonitorConsumer(AsyncWebsocketConsumer):
             self.room_group_name,
             self.channel_name
         )
-        print(f"Display monitor disconnected: {self.channel_name}")
     
     async def patient_called(self, event):
         """Receive patient called event and display on monitor"""
-        print(f"Broadcasting to display: {event}")
         await self.send(text_data=json.dumps({
             'type': 'patient_called',
             'patient_name': event.get('patient_name', ''),
             'queue_number': event.get('queue_number', ''),
-            'serial_number': event.get('serial_number', ''),
             'doctor_name': event.get('doctor_name', ''),
-            'room_number': event.get('room_number', 'Consultation Room'),
-            'message': f"Patient {event.get('patient_name', '')} - Serial #{event.get('serial_number', '')}"
+            'room_number': event.get('room_number', 'N/A'),
+            'message': f"Patient {event.get('patient_name', '')} - Queue #{event.get('queue_number', '')}, please proceed to Room {event.get('room_number', 'N/A')}"
         }))
     
     async def queue_update(self, event):

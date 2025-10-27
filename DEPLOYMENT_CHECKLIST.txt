@@ -1,0 +1,194 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║     🚀 DEPLOYMENT CHECKLIST - nazipuruhs.com (Port 8005)        ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════
+✅ PRE-DEPLOYMENT CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+LOCAL MACHINE (Before Deployment):
+───────────────────────────────────
+[ ] All code changes committed
+[ ] Database migrations created
+[ ] requirements.txt updated
+[ ] Static files working locally
+[ ] No debug/test code left in production settings
+
+═══════════════════════════════════════════════════════════════════
+🚀 DEPLOYMENT STEPS
+═══════════════════════════════════════════════════════════════════
+
+OPTION 1: ONE-CLICK DEPLOY (Recommended)
+─────────────────────────────────────────
+[ ] Run: chmod +x deploy_now.sh
+[ ] Run: ./deploy_now.sh
+[ ] Wait for completion
+[ ] Done! ✓
+
+OPTION 2: MANUAL DEPLOYMENT
+─────────────────────────────────────────
+On Local Machine:
+[ ] Run: ./push_to_vps.sh
+[ ] Verify files uploaded
+
+On VPS:
+[ ] SSH: ssh root@nazipuruhs.com
+[ ] Run: cd /var/www/nazipuruhs
+[ ] Run: bash pull_from_repo.sh
+[ ] Verify service started
+
+═══════════════════════════════════════════════════════════════════
+🔍 POST-DEPLOYMENT VERIFICATION
+═══════════════════════════════════════════════════════════════════
+
+ON VPS:
+───────────────────────────────────
+[ ] Service running: systemctl status nazipuruhs
+[ ] Port listening: netstat -tulpn | grep 8005
+[ ] No errors in logs: journalctl -u nazipuruhs -n 50
+[ ] Nginx running: systemctl status nginx
+[ ] SSL certificate valid (if HTTPS)
+
+BROWSER TESTS:
+───────────────────────────────────
+[ ] Homepage loads: https://nazipuruhs.com
+[ ] Admin panel works: https://nazipuruhs.com/admin
+[ ] Static files loading (CSS, JS, images)
+[ ] Media files uploading and displaying
+[ ] Login/logout working
+[ ] All main features functional
+
+═══════════════════════════════════════════════════════════════════
+⚙️ FIRST-TIME SETUP (If deploying for the first time)
+═══════════════════════════════════════════════════════════════════
+
+[ ] Create superuser:
+    cd /var/www/nazipuruhs
+    source venv/bin/activate
+    python manage.py createsuperuser --settings=diagcenter.production_settings
+
+[ ] Load initial data (if any):
+    python manage.py loaddata initial_data --settings=diagcenter.production_settings
+
+[ ] Set up SSL certificate:
+    certbot --nginx -d nazipuruhs.com -d www.nazipuruhs.com
+
+[ ] Configure firewall:
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 8005/tcp
+
+[ ] Set up automatic backups:
+    # Add to crontab:
+    0 2 * * * cp /var/www/nazipuruhs/db.sqlite3 /root/backups/db_$(date +\%Y\%m\%d).sqlite3
+
+═══════════════════════════════════════════════════════════════════
+🔧 CONFIGURATION VERIFICATION
+═══════════════════════════════════════════════════════════════════
+
+[ ] Port 8005 configured in:
+    - gunicorn_config.py ✓
+    - hosp.service ✓
+    - nginx_nazipuruhs.conf ✓
+
+[ ] Domain nazipuruhs.com configured in:
+    - nginx_nazipuruhs.conf ✓
+    - production_settings.py ALLOWED_HOSTS
+
+[ ] Service name 'nazipuruhs' used consistently ✓
+
+[ ] Directory /var/www/nazipuruhs used everywhere ✓
+
+═══════════════════════════════════════════════════════════════════
+🐛 TROUBLESHOOTING CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+IF SERVICE WON'T START:
+───────────────────────────────────
+[ ] Check logs: journalctl -u nazipuruhs -xe
+[ ] Check permissions: ls -la /var/www/nazipuruhs
+[ ] Fix permissions: chown -R www-data:www-data /var/www/nazipuruhs
+[ ] Check Python path: which python (inside venv)
+[ ] Check port availability: netstat -tulpn | grep 8005
+
+IF 502 BAD GATEWAY:
+───────────────────────────────────
+[ ] Service running: systemctl status nazipuruhs
+[ ] Gunicorn bound to 8005: ps aux | grep gunicorn
+[ ] Restart: systemctl restart nazipuruhs
+[ ] Nginx reload: systemctl reload nginx
+
+IF STATIC FILES NOT LOADING:
+───────────────────────────────────
+[ ] Collect static: python manage.py collectstatic --settings=diagcenter.production_settings
+[ ] Check permissions: ls -la /var/www/nazipuruhs/staticfiles
+[ ] Fix permissions: chown -R www-data:www-data /var/www/nazipuruhs/staticfiles
+[ ] Check nginx config: nginx -t
+
+IF DATABASE ERRORS:
+───────────────────────────────────
+[ ] Run migrations: python manage.py migrate --settings=diagcenter.production_settings
+[ ] Check database file: ls -la /var/www/nazipuruhs/*.db
+[ ] Fix permissions: chown www-data:www-data /var/www/nazipuruhs/*.db
+
+═══════════════════════════════════════════════════════════════════
+📊 MONITORING CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+REGULAR CHECKS:
+───────────────────────────────────
+[ ] Service status: systemctl status nazipuruhs
+[ ] Disk space: df -h
+[ ] Memory usage: free -h
+[ ] Error logs: tail -f /var/log/nazipuruhs/error.log
+[ ] Access logs: tail -f /var/log/nazipuruhs/access.log
+[ ] Database backups: ls -lh /root/backups/
+
+═══════════════════════════════════════════════════════════════════
+🔐 SECURITY CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+[ ] DEBUG = False in production settings
+[ ] SECRET_KEY changed from default
+[ ] ALLOWED_HOSTS configured correctly
+[ ] SSL certificate installed and valid
+[ ] Firewall enabled and configured
+[ ] Database credentials secured
+[ ] File permissions correct (755 for dirs, 644 for files)
+[ ] Service running as www-data (not root)
+[ ] Regular backups scheduled
+[ ] Fail2ban installed (optional but recommended)
+
+═══════════════════════════════════════════════════════════════════
+📞 SUPPORT INFORMATION
+═══════════════════════════════════════════════════════════════════
+
+VPS Provider: Contabo
+Support Email: support@contabo.com
+
+Quick Diagnostics Commands:
+───────────────────────────────────
+systemctl status nazipuruhs
+journalctl -u nazipuruhs -n 50
+netstat -tulpn | grep 8005
+ps aux | grep gunicorn
+nginx -t
+df -h
+free -h
+
+═══════════════════════════════════════════════════════════════════
+✅ DEPLOYMENT COMPLETE!
+═══════════════════════════════════════════════════════════════════
+
+Once all items are checked, your hospital system should be:
+✓ Running on nazipuruhs.com
+✓ Accessible on port 8005
+✓ Serving via HTTPS (if SSL configured)
+✓ Coexisting with other apps on the same VPS
+
+Access: https://nazipuruhs.com
+Admin: https://nazipuruhs.com/admin
+
+═══════════════════════════════════════════════════════════════════

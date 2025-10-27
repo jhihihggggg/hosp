@@ -1,23 +1,26 @@
 [Unit]
-Description=Hospital Management System (nazipuruhs.com)
+Description=Nazipuruhs Hospital Management System
 After=network.target
 
 [Service]
 Type=notify
-User=hosp
-Group=hosp
-WorkingDirectory=/var/www/hosp
+User=www-data
+Group=www-data
+RuntimeDirectory=nazipuruhs
+WorkingDirectory=/var/www/nazipuruhs
+Environment="PATH=/var/www/nazipuruhs/venv/bin"
 Environment="DJANGO_SETTINGS_MODULE=diagcenter.production_settings"
-Environment="PYTHONPATH=/var/www/hosp"
-ExecStart=/var/www/hosp/venv/bin/gunicorn \
-    -c /var/www/hosp/gunicorn_config.py \
+ExecStart=/var/www/nazipuruhs/venv/bin/gunicorn \
+    --bind 0.0.0.0:8005 \
+    --workers 4 \
+    --timeout 120 \
+    --access-logfile /var/log/nazipuruhs/access.log \
+    --error-logfile /var/log/nazipuruhs/error.log \
     diagcenter.wsgi:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
 TimeoutStopSec=5
 PrivateTmp=true
-Restart=on-failure
-RestartSec=10s
 
 [Install]
 WantedBy=multi-user.target

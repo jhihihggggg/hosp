@@ -11,14 +11,12 @@ class User(AbstractUser):
         ('LAB', 'Lab Staff'),
         ('PHARMACY', 'Pharmacy Staff'),
         ('CANTEEN', 'Canteen Staff'),
-        ('DISPLAY', 'Display Monitor'),
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='RECEPTIONIST')
     phone = models.CharField(max_length=20, blank=True)
     address = models.TextField(blank=True)
     specialization = models.CharField(max_length=100, blank=True, help_text="For doctors")
-    qualification = models.TextField(blank=True, help_text="Educational qualifications")
     license_number = models.CharField(max_length=50, blank=True, help_text="Professional license")
     profile_picture = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
@@ -50,15 +48,3 @@ class User(AbstractUser):
     @property
     def is_pharmacy_staff(self):
         return self.role == 'PHARMACY'
-    
-    @property
-    def is_canteen_staff(self):
-        return self.role == 'CANTEEN'
-    
-    @property
-    def is_nurse(self):
-        return self.role == 'NURSE'
-    
-    @property
-    def is_display(self):
-        return self.role == 'DISPLAY'

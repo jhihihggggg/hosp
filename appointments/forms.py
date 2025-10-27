@@ -12,7 +12,7 @@ class DoctorScheduleForm(forms.ModelForm):
     class Meta:
         model = DoctorSchedule
         fields = ['doctor', 'day_of_week', 'start_time', 'end_time', 'max_patients', 
-                  'consultation_duration', 'room_number', 'notes', 'is_active']
+                  'consultation_duration', 'room_number', 'is_active']
         widgets = {
             'doctor': forms.Select(attrs={'class': 'form-control'}),
             'day_of_week': forms.Select(attrs={'class': 'form-control'}),
@@ -21,7 +21,6 @@ class DoctorScheduleForm(forms.ModelForm):
             'max_patients': forms.NumberInput(attrs={'class': 'form-control'}),
             'consultation_duration': forms.NumberInput(attrs={'class': 'form-control'}),
             'room_number': forms.TextInput(attrs={'class': 'form-control'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
@@ -99,15 +98,14 @@ class QuickAppointmentForm(forms.Form):
         empty_label='-- Choose a Doctor --'
     )
     
-    # Date and time selection - optional for walk-in (defaults to today)
+    # Date and time selection
     appointment_date = forms.DateField(
-        required=False,
         widget=forms.DateInput(attrs={
             'class': 'form-control form-control-lg',
             'type': 'date',
             'id': 'appointment-date'
         }),
-        label='Select Date (Optional - defaults to today)'
+        label='Select Date'
     )
     
     appointment_time = forms.TimeField(
@@ -116,7 +114,7 @@ class QuickAppointmentForm(forms.Form):
             'class': 'form-control form-control-lg',
             'id': 'appointment-time'
         }),
-        label='Select Time Slot (Optional)'
+        label='Select Time Slot'
     )
     
     # Optional reason
@@ -145,8 +143,7 @@ class QuickAppointmentForm(forms.Form):
         age = self.cleaned_data['age']
         gender = self.cleaned_data['gender']
         doctor = self.cleaned_data['doctor']
-        # Default to today if no date selected (Bengali serial system)
-        appointment_date = self.cleaned_data.get('appointment_date') or date.today()
+        appointment_date = self.cleaned_data['appointment_date']
         appointment_time = self.cleaned_data.get('appointment_time')
         reason = self.cleaned_data.get('reason', '')
         

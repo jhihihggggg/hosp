@@ -1,0 +1,226 @@
+═══════════════════════════════════════════════════════════════
+🏥 NAZIPURUHS.COM - QUICK DEPLOYMENT GUIDE
+═══════════════════════════════════════════════════════════════
+
+Domain: nazipuruhs.com
+Port: 8005
+Path: /var/www/nazipuruhs
+
+═══════════════════════════════════════════════════════════════
+🚀 DEPLOY IN 1 COMMAND
+═══════════════════════════════════════════════════════════════
+
+On your local machine (codespace):
+
+    chmod +x deploy_now.sh
+    ./deploy_now.sh
+
+That's it! The script will:
+✓ Commit your code
+✓ Push to GitHub (if set up)
+✓ Upload to VPS
+✓ Deploy automatically
+✓ Restart the service
+
+═══════════════════════════════════════════════════════════════
+🔄 MANUAL DEPLOYMENT (2 Steps)
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Push from Local
+────────────────────────
+    cd /workspaces/hosp
+    ./push_to_vps.sh
+
+
+STEP 2: Deploy on VPS
+────────────────────────
+    ssh root@nazipuruhs.com
+    cd /var/www/nazipuruhs
+    bash pull_from_repo.sh
+
+
+═══════════════════════════════════════════════════════════════
+📦 FIRST TIME SETUP (On VPS)
+═══════════════════════════════════════════════════════════════
+
+1. Create Directory
+────────────────────────
+    mkdir -p /var/www/nazipuruhs
+    cd /var/www/nazipuruhs
+
+
+2. Upload Files
+────────────────────────
+    # From local machine:
+    ./push_to_vps.sh
+
+
+3. Extract and Setup
+────────────────────────
+    cd /var/www/nazipuruhs
+    tar -xzf /tmp/hospital_deploy.tar.gz
+    
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+
+
+4. Configure Database
+────────────────────────
+    python manage.py migrate --settings=diagcenter.production_settings
+    python manage.py createsuperuser --settings=diagcenter.production_settings
+    python manage.py collectstatic --noinput --settings=diagcenter.production_settings
+
+
+5. Install Service
+────────────────────────
+    # Copy service file
+    cp hosp.service /etc/systemd/system/nazipuruhs.service
+    
+    # Create log directory
+    mkdir -p /var/log/nazipuruhs
+    chown www-data:www-data /var/log/nazipuruhs
+    
+    # Enable and start
+    systemctl daemon-reload
+    systemctl enable nazipuruhs
+    systemctl start nazipuruhs
+
+
+6. Configure Nginx
+────────────────────────
+    # Copy nginx config
+    cp nginx_nazipuruhs.conf /etc/nginx/sites-available/nazipuruhs
+    
+    # Enable site
+    ln -s /etc/nginx/sites-available/nazipuruhs /etc/nginx/sites-enabled/
+    
+    # Test and reload
+    nginx -t
+    systemctl reload nginx
+
+
+7. Set Permissions
+────────────────────────
+    chown -R www-data:www-data /var/www/nazipuruhs
+    chmod -R 755 /var/www/nazipuruhs
+
+
+8. Install SSL Certificate (Optional but Recommended)
+────────────────────────
+    apt-get install certbot python3-certbot-nginx
+    certbot --nginx -d nazipuruhs.com -d www.nazipuruhs.com
+
+
+═══════════════════════════════════════════════════════════════
+✅ VERIFY INSTALLATION
+═══════════════════════════════════════════════════════════════
+
+    # Check service
+    systemctl status nazipuruhs
+    
+    # Check port
+    netstat -tulpn | grep 8005
+    
+    # Test locally
+    curl http://localhost:8005
+    
+    # View logs
+    journalctl -u nazipuruhs -f
+
+
+═══════════════════════════════════════════════════════════════
+⚡ QUICK COMMANDS
+═══════════════════════════════════════════════════════════════
+
+Restart Service:
+    systemctl restart nazipuruhs
+
+View Logs:
+    journalctl -u nazipuruhs -f
+
+Check Status:
+    systemctl status nazipuruhs
+
+Reload Nginx:
+    systemctl reload nginx
+
+Django Shell:
+    cd /var/www/nazipuruhs && source venv/bin/activate
+    python manage.py shell --settings=diagcenter.production_settings
+
+
+═══════════════════════════════════════════════════════════════
+🐛 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Service Won't Start:
+    journalctl -u nazipuruhs -xe
+    chown -R www-data:www-data /var/www/nazipuruhs
+
+Port Conflict:
+    netstat -tulpn | grep 8005
+    # If port is used, stop the other service or change port
+
+502 Bad Gateway:
+    systemctl restart nazipuruhs
+    systemctl reload nginx
+
+Static Files Not Loading:
+    python manage.py collectstatic --settings=diagcenter.production_settings
+    chown -R www-data:www-data /var/www/nazipuruhs/staticfiles
+
+
+═══════════════════════════════════════════════════════════════
+📊 YOUR VPS SETUP
+═══════════════════════════════════════════════════════════════
+
+/var/www/
+├── madrasha/          (Existing project 1)
+├── saro/              (Existing project 2)
+└── nazipuruhs/        (NEW - Port 8005) ⭐
+    ├── venv/
+    ├── diagcenter/
+    ├── templates/
+    ├── static/
+    ├── media/
+    └── manage.py
+
+
+═══════════════════════════════════════════════════════════════
+🌐 ACCESS
+═══════════════════════════════════════════════════════════════
+
+Website:     https://nazipuruhs.com
+Admin Panel: https://nazipuruhs.com/admin
+Port:        8005
+
+
+═══════════════════════════════════════════════════════════════
+💾 BACKUP
+═══════════════════════════════════════════════════════════════
+
+Database:
+    cp /var/www/nazipuruhs/db.sqlite3 /root/backups/
+
+Full Backup:
+    tar -czf /root/backups/nazipuruhs_$(date +%Y%m%d).tar.gz \
+        /var/www/nazipuruhs
+
+
+═══════════════════════════════════════════════════════════════
+📞 SUPPORT
+═══════════════════════════════════════════════════════════════
+
+Check Status:
+    systemctl status nazipuruhs
+    journalctl -u nazipuruhs -n 50
+
+VPS Provider: Contabo (support@contabo.com)
+
+
+═══════════════════════════════════════════════════════════════
+
+🎉 Ready to deploy! Run: ./deploy_now.sh
+
+═══════════════════════════════════════════════════════════════
