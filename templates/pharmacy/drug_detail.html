@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Drug Details - {{ drug.name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.drug-header{border-radius:12px;padding:20px;background:#fff;box-shadow:0 4px 10px rgba(0,0,0,0.05)}
+.batch-row{border-left:4px solid #e9ecef;padding:10px;border-radius:6px;margin-bottom:10px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="drug-header">
+        <h3>{{ drug.name }} <small class="text-muted">{{ drug.strength }}</small></h3>
+        <p class="mb-1">Generic: {{ drug.generic_name }}</p>
+        <p class="mb-1">Category: <span class="badge bg-info">{{ drug.category }}</span></p>
+        <p class="mb-1">Shelf: {{ drug.shelf_location }}</p>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-body">
+          <h5>Batches</h5>
+          {% for batch in drug.batches.all %}
+          <div class="batch-row {% if batch.is_expired %}bg-danger bg-opacity-10{% elif batch.is_expiring_soon %}bg-warning bg-opacity-10{% endif %}">
+            <div class="d-flex justify-content-between">
+              <div>
+                <strong>Batch:</strong> {{ batch.batch_number }} &nbsp; <small class="text-muted">Exp: {{ batch.expiry_date|date:'d M, Y' }}</small>
+                <div><small>Qty: {{ batch.quantity }} {{ drug.unit }}</small></div>
+              </div>
+              <div>
+                <button class="btn btn-sm btn-outline-primary" onclick="quickAdjust({{ batch.id }})">Adjust</button>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted">No batches available</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-body">
+          <h5>History</h5>
+          <table class="table">
+            <thead><tr><th>Date</th><th>Action</th><th>Qty</th><th>User</th></tr></thead>
+            <tbody>
+              {% for h in history %}
+              <tr>
+                <td>{{ h.date|date:'d M, Y' }}</td>
+                <td>{{ h.action }}</td>
+                <td>{{ h.quantity }}</td>
+                <td>{{ h.user }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-muted">No history</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h5>Summary</h5>
+          <p><strong>Quantity:</strong> {{ drug.quantity }} {{ drug.unit }}</p>
+          <p><strong>Reorder Level:</strong> {{ drug.reorder_level }}</p>
+          <p><strong>Purchase Price:</strong> ৳{{ drug.purchase_price }}</p>
+          <p><strong>Sale Price:</strong> ৳{{ drug.sale_price }}</p>
+          <div class="d-grid gap-2 mt-3">
+            <button class="btn btn-primary" onclick="quickAdjust(null)">Quick Adjust</button>
+            <a href="{% url 'pharmacy:drug_edit' drug.id %}" class="btn btn-outline-secondary">Edit Drug</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function quickAdjust(id){
+  // open modal or redirect to adjust page
+  alert('Open quick adjust for id: '+id);
+}
+</script>
+{% endblock %}

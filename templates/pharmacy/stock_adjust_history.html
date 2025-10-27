@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stock Adjustment History - Pharmacy{% endblock %}
+
+{% block extra_css %}
+<style>
+.adjust-table th, .adjust-table td{vertical-align:middle}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row mb-3">
+    <div class="col-8"><h3>Stock Adjustment History</h3></div>
+    <div class="col-4 text-end"><a href="{% url 'pharmacy:stock_adjust' %}" class="btn btn-primary">Adjust Stock</a></div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table adjust-table">
+          <thead class="table-light"><tr><th>Date</th><th>Drug</th><th>Type</th><th>Qty</th><th>Reason</th><th>User</th></tr></thead>
+          <tbody>
+            {% for adj in adjustments %}
+            <tr>
+              <td>{{ adj.created_at|date:'d M, Y h:i A' }}</td>
+              <td>{{ adj.drug.name }}</td>
+              <td>{{ adj.adjust_type }}</td>
+              <td>{{ adj.quantity }}</td>
+              <td>{{ adj.reason }}</td>
+              <td>{{ adj.user.get_full_name }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center text-muted">No adjustments found</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

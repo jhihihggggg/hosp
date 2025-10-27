@@ -1,0 +1,542 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lab Orders - Laboratory{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        border-left: 5px solid #dee2e6;
+    }
+    
+    .order-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .order-card.ordered {
+        border-left-color: #0dcaf0;
+        background-color: #cff4fc;
+    }
+    
+    .order-card.sample_collected {
+        border-left-color: #0d6efd;
+        background-color: #cfe2ff;
+    }
+    
+    .order-card.in_progress {
+        border-left-color: #ffc107;
+        background-color: #fff3cd;
+    }
+    
+    .order-card.completed {
+        border-left-color: #198754;
+        background-color: #d1e7dd;
+    }
+    
+    .order-card.cancelled {
+        border-left-color: #dc3545;
+        background-color: #f8d7da;
+    }
+    
+    .stat-box {
+        border-radius: 15px;
+        padding: 25px;
+        color: white;
+        margin-bottom: 20px;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+    
+    .stat-box:hover {
+        transform: scale(1.05);
+    }
+    
+    .priority-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .test-list {
+        max-height: 100px;
+        overflow-y: auto;
+    }
+    
+    .test-tag {
+        display: inline-block;
+        background-color: #e7f3ff;
+        border: 1px solid #0d6efd;
+        border-radius: 15px;
+        padding: 3px 10px;
+        margin: 2px;
+        font-size: 0.85rem;
+    }
+    
+    .filter-tabs {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .filter-tab {
+        padding: 10px 20px;
+        border-radius: 10px;
+        border: none;
+        background: transparent;
+        margin: 0 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-tab.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .timeline-indicator {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-flask text-info"></i> Lab Orders</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'lab_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Lab Orders</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'lab:order_create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Order
+                    </a>
+                    <button class="btn btn-success" onclick="exportData()">
+                        <i class="fas fa-file-excel"></i> Export
+                    </button>
+                    <button class="btn btn-info" id="refreshBtn" onclick="refreshOrders()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row">
+        <div class="col-md-2">
+            <div class="stat-box" style="background: linear-gradient(135deg, #17a2b8 0%, #117a8b 100%);"
+                 onclick="filterByStatus('ORDERED')">
+                <h6>Ordered</h6>
+                <h2 class="mb-0">{{ ordered_count }}</h2>
+                <small>New orders</small>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-box" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);"
+                 onclick="filterByStatus('SAMPLE_COLLECTED')">
+                <h6>Sample Collected</h6>
+                <h2 class="mb-0">{{ collected_count }}</h2>
+                <small>Ready for testing</small>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-box" style="background: linear-gradient(135deg, #ffc107 0%, #cc9a06 100%);"
+                 onclick="filterByStatus('IN_PROGRESS')">
+                <h6>In Progress</h6>
+                <h2 class="mb-0">{{ progress_count }}</h2>
+                <small>Being tested</small>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-box bg-success" onclick="filterByStatus('COMPLETED')">
+                <h6>Completed</h6>
+                <h2 class="mb-0">{{ completed_count }}</h2>
+                <small>Today</small>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-box bg-danger" onclick="filterByPriority()">
+                <h6>Urgent</h6>
+                <h2 class="mb-0">{{ urgent_count }}</h2>
+                <small>Priority orders</small>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-box bg-secondary">
+                <h6>Total Orders</h6>
+                <h2 class="mb-0">{{ total_count }}</h2>
+                <small>All time</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <button class="filter-tab {% if not request.GET.status %}active{% endif %}" 
+                        onclick="filterByStatus('')">
+                    All Orders
+                </button>
+                <button class="filter-tab {% if request.GET.status == 'ORDERED' %}active{% endif %}" 
+                        onclick="filterByStatus('ORDERED')">
+                    <i class="fas fa-clipboard-list"></i> Ordered
+                </button>
+                <button class="filter-tab {% if request.GET.status == 'SAMPLE_COLLECTED' %}active{% endif %}" 
+                        onclick="filterByStatus('SAMPLE_COLLECTED')">
+                    <i class="fas fa-vial"></i> Sample Collected
+                </button>
+                <button class="filter-tab {% if request.GET.status == 'IN_PROGRESS' %}active{% endif %}" 
+                        onclick="filterByStatus('IN_PROGRESS')">
+                    <i class="fas fa-microscope"></i> In Progress
+                </button>
+                <button class="filter-tab {% if request.GET.status == 'COMPLETED' %}active{% endif %}" 
+                        onclick="filterByStatus('COMPLETED')">
+                    <i class="fas fa-check-circle"></i> Completed
+                </button>
+            </div>
+            <div>
+                <input type="text" class="form-control" id="searchBox" 
+                       placeholder="Search by order # or patient name..." 
+                       onkeyup="searchOrders()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders Grid -->
+    <div class="row" id="ordersContainer">
+        {% for order in order_list %}
+        <div class="col-md-6 col-lg-4 order-item" data-status="{{ order.status }}" 
+             data-search="{{ order.order_number }} {{ order.patient.full_name }}">
+            <div class="order-card {{ order.status|lower|slugify }}">
+                <div class="card-body position-relative">
+                    <!-- Priority Badge -->
+                    {% if order.priority %}
+                    <span class="priority-badge badge bg-danger">
+                        <i class="fas fa-exclamation-triangle"></i> URGENT
+                    </span>
+                    {% endif %}
+                    
+                    <!-- Order Header -->
+                    <div class="mb-3">
+                        <h5 class="mb-1">
+                            <i class="fas fa-hashtag"></i> {{ order.order_number }}
+                        </h5>
+                        <div class="timeline-indicator">
+                            <i class="far fa-clock"></i> {{ order.ordered_at|date:"d M, Y h:i A" }}
+                        </div>
+                    </div>
+
+                    <!-- Patient Info -->
+                    <div class="mb-3 pb-3 border-bottom">
+                        <h6 class="mb-1">
+                            <i class="fas fa-user-injured text-primary"></i> 
+                            {{ order.patient.full_name }}
+                        </h6>
+                        <small class="text-muted">
+                            ID: {{ order.patient.patient_id }} | 
+                            {{ order.patient.age }}Y/{{ order.patient.get_gender_display }}
+                        </small>
+                        {% if order.patient.phone %}
+                        <br><small><i class="fas fa-phone"></i> {{ order.patient.phone }}</small>
+                        {% endif %}
+                    </div>
+
+                    <!-- Tests -->
+                    <div class="mb-3">
+                        <strong class="d-block mb-2">
+                            <i class="fas fa-flask"></i> Tests Ordered ({{ order.tests.count }})
+                        </strong>
+                        <div class="test-list">
+                            {% for test in order.tests.all %}
+                            <span class="test-tag">{{ test.test_name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Clinical Notes -->
+                    {% if order.clinical_notes %}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-notes-medical"></i> 
+                            {{ order.clinical_notes|truncatewords:15 }}
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <!-- Ordered By -->
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-user-md"></i> Dr. {{ order.ordered_by.get_full_name }}
+                        </small>
+                    </div>
+
+                    <!-- Status Badge -->
+                    <div class="mb-3">
+                        {% if order.status == 'ORDERED' %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-clipboard-list"></i> Ordered
+                            </span>
+                        {% elif order.status == 'SAMPLE_COLLECTED' %}
+                            <span class="badge bg-primary">
+                                <i class="fas fa-vial"></i> Sample Collected
+                            </span>
+                            <br><small class="text-muted">{{ order.sample_collected_at|date:"d M, h:i A" }}</small>
+                        {% elif order.status == 'IN_PROGRESS' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-microscope"></i> In Progress
+                            </span>
+                        {% elif order.status == 'COMPLETED' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle"></i> Completed
+                            </span>
+                        {% elif order.status == 'CANCELLED' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-ban"></i> Cancelled
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Payment Info -->
+                    <div class="mb-3 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between">
+                            <span><strong>Amount:</strong></span>
+                            <span class="text-primary"><strong>৳{{ order.total_amount|floatformat:2 }}</strong></span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><small>Payment:</small></span>
+                            <span>
+                                {% if order.is_paid %}
+                                    <span class="badge bg-success">Paid</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        {% if order.status == 'ORDERED' %}
+                            <button class="btn btn-sm btn-primary" onclick="collectSample({{ order.id }})">
+                                <i class="fas fa-vial"></i> Collect Sample
+                            </button>
+                        {% elif order.status == 'SAMPLE_COLLECTED' %}
+                            <button class="btn btn-sm btn-warning" onclick="startTesting({{ order.id }})">
+                                <i class="fas fa-microscope"></i> Start Testing
+                            </button>
+                        {% elif order.status == 'IN_PROGRESS' %}
+                            <a href="{% url 'lab:result_entry' order.id %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i> Enter Results
+                            </a>
+                        {% elif order.status == 'COMPLETED' %}
+                            <button class="btn btn-sm btn-success" onclick="viewReport({{ order.id }})">
+                                <i class="fas fa-file-medical"></i> View Report
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="printReport({{ order.id }})">
+                                <i class="fas fa-print"></i> Print Report
+                            </button>
+                        {% endif %}
+                        
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-info" onclick="viewDetails({{ order.id }})">
+                                <i class="fas fa-eye"></i> Details
+                            </button>
+                            {% if order.status != 'COMPLETED' and order.status != 'CANCELLED' %}
+                            <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-flask fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No lab orders found</h4>
+                <p class="text-muted">Create a new lab order to get started</p>
+                <a href="{% url 'lab:order_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Lab Order
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav>
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Previous</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.status %}&status={{ request.GET.status }}{% endif %}">Last</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> Order Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function filterByStatus(status) {
+        if (status) {
+            window.location.href = `?status=${status}`;
+        } else {
+            window.location.href = window.location.pathname;
+        }
+    }
+
+    function filterByPriority() {
+        window.location.href = '?priority=true';
+    }
+
+    function searchOrders() {
+        const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+        const orders = document.querySelectorAll('.order-item');
+        
+        orders.forEach(order => {
+            const searchData = order.dataset.search.toLowerCase();
+            if (searchData.includes(searchTerm)) {
+                order.style.display = '';
+            } else {
+                order.style.display = 'none';
+            }
+        });
+    }
+
+    function collectSample(orderId) {
+        if (confirm('Mark sample as collected?')) {
+            fetch(`/lab/order/${orderId}/collect-sample/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(() => location.reload());
+        }
+    }
+
+    function startTesting(orderId) {
+        if (confirm('Start testing process?')) {
+            fetch(`/lab/order/${orderId}/start-testing/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(() => location.reload());
+        }
+    }
+
+    function viewReport(orderId) {
+        window.location.href = `/lab/order/${orderId}/report/`;
+    }
+
+    function printReport(orderId) {
+        window.open(`/lab/order/${orderId}/report/print/`, '_blank');
+    }
+
+    function viewDetails(orderId) {
+        fetch(`/lab/order/${orderId}/details/`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('modalBody').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('detailsModal')).show();
+            });
+    }
+
+    function cancelOrder(orderId) {
+        const reason = prompt('Reason for cancellation:');
+        if (reason) {
+            fetch(`/lab/order/${orderId}/cancel/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ reason: reason })
+            }).then(() => location.reload());
+        }
+    }
+
+    function refreshOrders() {
+        const btn = document.getElementById('refreshBtn');
+        btn.querySelector('i').classList.add('fa-spin');
+        location.reload();
+    }
+
+    function exportData() {
+        const params = new URLSearchParams(window.location.search);
+        params.set('export', 'excel');
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+
+    // Auto-refresh every 60 seconds for active orders
+    {% if request.GET.status != 'COMPLETED' and request.GET.status != 'CANCELLED' %}
+    setInterval(() => {
+        console.log('Auto-refresh: checking for updates...');
+        // Could implement AJAX refresh here
+    }, 60000);
+    {% endif %}
+</script>
+{% endblock %}

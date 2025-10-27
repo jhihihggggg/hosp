@@ -1,0 +1,424 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+        border-radius: 10px;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    .period-selector {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+    <div>
+        <span class="badge bg-primary me-2">{{ request.user.get_full_name }}</span>
+        <span class="text-muted">{{ start_date|date:"M d, Y" }} - {{ end_date|date:"M d, Y" }}</span>
+    </div>
+</div>
+
+<!-- Period Filter -->
+<div class="period-selector mb-4">
+    <div class="btn-group" role="group">
+        <a href="?period=today" class="btn {% if period == 'today' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-calendar-day"></i> Today
+        </a>
+        <a href="?period=week" class="btn {% if period == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-calendar-week"></i> This Week
+        </a>
+        <a href="?period=month" class="btn {% if period == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-calendar-month"></i> This Month
+        </a>
+        <a href="?period=year" class="btn {% if period == 'year' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-calendar-range"></i> This Year
+        </a>
+    </div>
+    <div class="float-end">
+        <a href="{% url 'finance:income_create' %}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Add Income
+        </a>
+        <a href="{% url 'finance:expense_create' %}" class="btn btn-danger">
+            <i class="bi bi-dash-circle"></i> Add Expense
+        </a>
+    </div>
+</div>
+
+<!-- Financial Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Income</h6>
+                        <h3 class="mb-0 text-success">₹{{ total_income|floatformat:0 }}</h3>
+                    </div>
+                    <div class="text-success fs-1">
+                        <i class="bi bi-arrow-up-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card border-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Expenses</h6>
+                        <h3 class="mb-0 text-danger">₹{{ total_expenses|floatformat:0 }}</h3>
+                    </div>
+                    <div class="text-danger fs-1">
+                        <i class="bi bi-arrow-down-circle"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Net Profit</h6>
+                        <h3 class="mb-0 {% if profit >= 0 %}text-primary{% else %}text-danger{% endif %}">
+                            ₹{{ profit|floatformat:0 }}
+                        </h3>
+                    </div>
+                    <div class="text-primary fs-1">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stat-card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-1">Total Patients</h6>
+                        <h3 class="mb-0 text-info">{{ total_patients }}</h3>
+                    </div>
+                    <div class="text-info fs-1">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Sources Chart -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Revenue Sources</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="bi bi-circle-fill text-primary"></i> Appointments</span>
+                        <strong>₹{{ appointment_income|floatformat:0 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="bi bi-circle-fill text-success"></i> Lab Tests</span>
+                        <strong>₹{{ lab_income|floatformat:0 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span><i class="bi bi-circle-fill text-warning"></i> Pharmacy</span>
+                        <strong>₹{{ pharmacy_income|floatformat:0 }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span><i class="bi bi-circle-fill text-info"></i> Canteen</span>
+                        <strong>₹{{ canteen_income|floatformat:0 }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Daily Trend</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Investors & Quick Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-people-fill"></i> Investors</h5>
+                <a href="{% url 'finance:investor_create' %}" class="btn btn-sm btn-dark">
+                    <i class="bi bi-plus"></i> Add Investor
+                </a>
+            </div>
+            <div class="card-body">
+                {% if investors %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Investment</th>
+                                <th>Share %</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for investor in investors %}
+                            <tr>
+                                <td><strong>{{ investor.name }}</strong></td>
+                                <td>₹{{ investor.investment_amount|floatformat:0 }}</td>
+                                <td>{{ investor.share_percentage }}%</td>
+                                <td>
+                                    <a href="{% url 'finance:investor_edit' investor.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-active">
+                                <td><strong>Total Investment</strong></td>
+                                <td colspan="3"><strong>₹{{ total_investment|floatformat:0 }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox display-4"></i>
+                    <p class="mt-2">No investors added yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-activity"></i> Quick Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1">{{ period_appointments }}</h4>
+                            <small class="text-muted">Appointments</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1">{{ total_patients }}</h4>
+                            <small class="text-muted">Total Patients</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1">{{ lab_tests|default:0 }}</h4>
+                            <small class="text-muted">Lab Tests</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <h4 class="mb-1">{{ pharmacy_sales|default:0 }}</h4>
+                            <small class="text-muted">Pharmacy Sales</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'finance:financial_report' %}" class="btn btn-primary">
+                        <i class="bi bi-file-earmark-text"></i> View Detailed Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between">
+                <h5 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Recent Income</h5>
+                <a href="{% url 'finance:income_list' %}" class="btn btn-sm btn-light">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_income %}
+                <div class="list-group list-group-flush">
+                    {% for income in recent_income %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ income.description }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ income.date|date:"M d, Y" }} • {{ income.get_source_display }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="text-success mb-0">₹{{ income.amount }}</h5>
+                            <a href="{% url 'finance:income_edit' income.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted mb-0">No income records</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white d-flex justify-content-between">
+                <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Recent Expenses</h5>
+                <a href="{% url 'finance:expense_list' %}" class="btn btn-sm btn-light">View All</a>
+            </div>
+            <div class="card-body">
+                {% if recent_expenses %}
+                <div class="list-group list-group-flush">
+                    {% for expense in recent_expenses %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ expense.description }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ expense.date|date:"M d, Y" }} • {{ expense.get_category_display }}
+                            </small>
+                        </div>
+                        <div class="text-end">
+                            <h5 class="text-danger mb-0">₹{{ expense.amount }}</h5>
+                            <a href="{% url 'finance:expense_edit' expense.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-center text-muted mb-0">No expense records</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Revenue Sources Pie Chart
+const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+new Chart(revenueCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Appointments', 'Lab Tests', 'Pharmacy', 'Canteen'],
+        datasets: [{
+            data: [
+                {{ appointment_income|default:0 }},
+                {{ lab_income|default:0 }},
+                {{ pharmacy_income|default:0 }},
+                {{ canteen_income|default:0 }}
+            ],
+            backgroundColor: [
+                'rgba(13, 110, 253, 0.8)',
+                'rgba(25, 135, 84, 0.8)',
+                'rgba(255, 193, 7, 0.8)',
+                'rgba(13, 202, 240, 0.8)'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Daily Trend Line Chart (mock data - replace with actual)
+const trendCtx = document.getElementById('trendChart').getContext('2d');
+new Chart(trendCtx, {
+    type: 'line',
+    data: {
+        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        datasets: [{
+            label: 'Income',
+            data: [12000, 15000, 13000, 18000, 16000, 14000, 17000],
+            borderColor: 'rgba(25, 135, 84, 1)',
+            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+            tension: 0.4,
+            fill: true
+        }, {
+            label: 'Expenses',
+            data: [8000, 9000, 7000, 10000, 9500, 8500, 9000],
+            borderColor: 'rgba(220, 53, 69, 1)',
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

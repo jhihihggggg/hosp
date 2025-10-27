@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supplier Management - Pharmacy{% endblock %}
+
+{% block extra_css %}
+<style>
+.supplier-form{max-width:600px;margin:0 auto;padding:30px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="supplier-form">
+    <h3 class="mb-4">{% if supplier %}Edit{% else %}Add{% endif %} Supplier</h3>
+    
+    <form method="post">{% csrf_token %}
+      <div class="mb-3">
+        <label>Supplier Name</label>
+        <input type="text" name="name" class="form-control" required value="{{ supplier.name|default:'' }}">
+      </div>
+      
+      <div class="mb-3">
+        <label>Contact Person</label>
+        <input type="text" name="contact_person" class="form-control" value="{{ supplier.contact_person|default:'' }}">
+      </div>
+      
+      <div class="mb-3">
+        <label>Phone</label>
+        <input type="tel" name="phone" class="form-control" required value="{{ supplier.phone|default:'' }}">
+      </div>
+      
+      <div class="mb-3">
+        <label>Email</label>
+        <input type="email" name="email" class="form-control" value="{{ supplier.email|default:'' }}">
+      </div>
+      
+      <div class="mb-3">
+        <label>Address</label>
+        <textarea name="address" class="form-control" rows="2">{{ supplier.address|default:'' }}</textarea>
+      </div>
+      
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">Save Supplier</button>
+        <a href="{% url 'pharmacy:supplier_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

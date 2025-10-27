@@ -1,0 +1,605 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Canteen Menu - Survey{% endblock %}
+
+{% block extra_css %}
+<style>
+    .menu-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+        transition: transform 0.3s;
+    }
+    
+    .menu-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .menu-item-card {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .menu-item-card:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .menu-item-card.unavailable {
+        opacity: 0.6;
+        background-color: #f8f9fa;
+    }
+    
+    .menu-category {
+        font-weight: bold;
+        color: #0d6efd;
+        font-size: 18pt;
+        margin: 25px 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 3px solid #0d6efd;
+    }
+    
+    .item-image {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .item-image-placeholder {
+        width: 100%;
+        height: 150px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    
+    .price-tag {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #198754;
+    }
+    
+    .quantity-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .quantity-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .quantity-input {
+        width: 60px;
+        text-align: center;
+        font-weight: bold;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+    }
+    
+    .cart-summary {
+        position: sticky;
+        top: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    .cart-item {
+        background-color: rgba(255, 255, 255, 0.1);
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .dietary-badge {
+        font-size: 0.75em;
+        padding: 3px 8px;
+        border-radius: 12px;
+    }
+    
+    .veg-badge {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .non-veg-badge {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .spicy-indicator {
+        color: #dc3545;
+    }
+    
+    .search-bar {
+        background-color: white;
+        border-radius: 25px;
+        padding: 12px 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-utensils text-warning"></i> Canteen Menu
+                    </h2>
+                    <p class="text-muted mb-0">Order delicious food from our canteen</p>
+                </div>
+                <div>
+                    {% if user.is_staff %}
+                    <a href="{% url 'survey:menu_item_add' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add Menu Item
+                    </a>
+                    <a href="{% url 'survey:order_list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View Orders
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Menu Items -->
+        <div class="col-lg-8">
+            <!-- Search & Filters -->
+            <div class="search-bar">
+                <form method="get" class="row g-2">
+                    <div class="col-md-6">
+                        <input type="text" name="search" class="form-control border-0" 
+                               placeholder="🔍 Search for food items..."
+                               value="{{ request.GET.search }}">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="category" class="form-select border-0">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category }}" {% if request.GET.category == category %}selected{% endif %}>
+                                {{ category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Quick Filter Chips -->
+            <div class="mb-3">
+                <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="filterByType('all')">
+                    All Items
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-success me-2" onclick="filterByType('veg')">
+                    <i class="fas fa-leaf"></i> Vegetarian
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger me-2" onclick="filterByType('non-veg')">
+                    <i class="fas fa-drumstick-bite"></i> Non-Veg
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="filterByType('popular')">
+                    <i class="fas fa-star"></i> Popular
+                </button>
+            </div>
+
+            <!-- Menu Items by Category -->
+            {% regroup menu_items by category as category_list %}
+            
+            {% for category in category_list %}
+            <div class="menu-category">
+                <i class="fas fa-{{ category.grouper|lower|slugify|default:'utensils' }}"></i> {{ category.grouper }}
+            </div>
+            
+            <div class="row">
+                {% for item in category.list %}
+                <div class="col-md-6 mb-3" data-item-type="{% if item.is_vegetarian %}veg{% else %}non-veg{% endif %}">
+                    <div class="menu-item-card {% if not item.is_available %}unavailable{% endif %}">
+                        {% if item.image %}
+                        <img src="{{ item.image.url }}" class="item-image" alt="{{ item.name }}">
+                        {% else %}
+                        <div class="item-image-placeholder">
+                            <i class="fas fa-utensils fa-3x text-white"></i>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="mb-0">{{ item.name }}</h5>
+                            <div>
+                                {% if item.is_vegetarian %}
+                                <span class="dietary-badge veg-badge">
+                                    <i class="fas fa-leaf"></i> Veg
+                                </span>
+                                {% else %}
+                                <span class="dietary-badge non-veg-badge">
+                                    <i class="fas fa-drumstick-bite"></i> Non-Veg
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <p class="text-muted small mb-2">{{ item.description|truncatewords:15 }}</p>
+                        
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="price-tag">৳ {{ item.price }}</div>
+                            {% if item.spice_level > 0 %}
+                            <div class="spicy-indicator">
+                                {% for i in "x"|rjust:item.spice_level %}🌶️{% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if item.preparation_time %}
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> {{ item.preparation_time }} mins
+                        </small>
+                        {% endif %}
+                        
+                        {% if item.is_popular %}
+                        <span class="badge bg-warning text-dark ms-2">
+                            <i class="fas fa-star"></i> Popular
+                        </span>
+                        {% endif %}
+                        
+                        {% if not item.is_available %}
+                        <div class="alert alert-warning mt-2 mb-0">
+                            <i class="fas fa-exclamation-circle"></i> Currently Unavailable
+                        </div>
+                        {% else %}
+                        <div class="quantity-selector mt-3">
+                            <button type="button" class="quantity-btn btn btn-outline-danger" 
+                                    onclick="decreaseQuantity({{ item.id }})">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" class="form-control quantity-input" 
+                                   id="qty-{{ item.id }}" value="0" min="0" max="20" readonly>
+                            <button type="button" class="quantity-btn btn btn-outline-success" 
+                                    onclick="increaseQuantity({{ item.id }})">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button type="button" class="btn btn-primary flex-grow-1" 
+                                    onclick="addToCart({{ item.id }}, '{{ item.name }}', {{ item.price }})">
+                                <i class="fas fa-shopping-cart"></i> Add
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% empty %}
+            <!-- Empty State -->
+            <div class="text-center py-5">
+                <i class="fas fa-utensils fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No menu items available</h4>
+                <p class="text-muted">
+                    {% if request.GET.search %}
+                        No results for "{{ request.GET.search }}"
+                    {% else %}
+                        The menu is currently being updated
+                    {% endif %}
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="col-lg-4">
+            <div class="cart-summary">
+                <h4 class="mb-3">
+                    <i class="fas fa-shopping-cart"></i> Your Order
+                </h4>
+                
+                <div id="cartItems">
+                    <div class="text-center text-white-50 py-4">
+                        <i class="fas fa-cart-plus fa-3x mb-3"></i>
+                        <p>Your cart is empty</p>
+                        <small>Add items from the menu</small>
+                    </div>
+                </div>
+                
+                <div id="cartSummary" style="display: none;">
+                    <hr class="border-light">
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <strong>৳ <span id="subtotal">0.00</span></strong>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Service Charge (5%):</span>
+                        <strong>৳ <span id="serviceCharge">0.00</span></strong>
+                    </div>
+                    
+                    <hr class="border-light">
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <h5 class="mb-0">Total:</h5>
+                        <h5 class="mb-0">৳ <span id="total">0.00</span></h5>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Delivery Location</label>
+                        <select class="form-select" id="deliveryLocation">
+                            <option value="ward-1">Ward 1</option>
+                            <option value="ward-2">Ward 2</option>
+                            <option value="ward-3">Ward 3</option>
+                            <option value="waiting-room">Waiting Room</option>
+                            <option value="canteen" selected>Pick up at Canteen</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Special Instructions</label>
+                        <textarea class="form-control" id="specialInstructions" rows="2" 
+                                  placeholder="Any special requests..."></textarea>
+                    </div>
+                    
+                    <button type="button" class="btn btn-light w-100 mb-2" onclick="placeOrder()">
+                        <i class="fas fa-check"></i> Place Order
+                    </button>
+                    
+                    <button type="button" class="btn btn-outline-light w-100" onclick="clearCart()">
+                        <i class="fas fa-trash"></i> Clear Cart
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Today's Special -->
+            {% if special_item %}
+            <div class="card mt-3 border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star"></i> Today's Special
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h5>{{ special_item.name }}</h5>
+                    <p class="text-muted">{{ special_item.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="price-tag">৳ {{ special_item.price }}</span>
+                        <button type="button" class="btn btn-warning" 
+                                onclick="quickAdd({{ special_item.id }}, '{{ special_item.name }}', {{ special_item.price }})">
+                            <i class="fas fa-plus"></i> Add to Cart
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let cart = [];
+    
+    // Increase quantity
+    function increaseQuantity(itemId) {
+        const input = document.getElementById(`qty-${itemId}`);
+        let value = parseInt(input.value);
+        if (value < 20) {
+            input.value = value + 1;
+        }
+    }
+    
+    // Decrease quantity
+    function decreaseQuantity(itemId) {
+        const input = document.getElementById(`qty-${itemId}`);
+        let value = parseInt(input.value);
+        if (value > 0) {
+            input.value = value - 1;
+        }
+    }
+    
+    // Add to cart
+    function addToCart(itemId, itemName, itemPrice) {
+        const quantity = parseInt(document.getElementById(`qty-${itemId}`).value);
+        
+        if (quantity === 0) {
+            alert('Please select quantity');
+            return;
+        }
+        
+        // Check if item already in cart
+        const existingItem = cart.find(item => item.id === itemId);
+        if (existingItem) {
+            existingItem.quantity += quantity;
+        } else {
+            cart.push({
+                id: itemId,
+                name: itemName,
+                price: itemPrice,
+                quantity: quantity
+            });
+        }
+        
+        // Reset quantity input
+        document.getElementById(`qty-${itemId}`).value = 0;
+        
+        updateCart();
+        
+        // Show feedback
+        showToast(`${itemName} added to cart`);
+    }
+    
+    // Quick add (for special items)
+    function quickAdd(itemId, itemName, itemPrice) {
+        cart.push({
+            id: itemId,
+            name: itemName,
+            price: itemPrice,
+            quantity: 1
+        });
+        
+        updateCart();
+        showToast(`${itemName} added to cart`);
+    }
+    
+    // Update cart display
+    function updateCart() {
+        const cartItemsDiv = document.getElementById('cartItems');
+        const cartSummaryDiv = document.getElementById('cartSummary');
+        
+        if (cart.length === 0) {
+            cartItemsDiv.innerHTML = `
+                <div class="text-center text-white-50 py-4">
+                    <i class="fas fa-cart-plus fa-3x mb-3"></i>
+                    <p>Your cart is empty</p>
+                    <small>Add items from the menu</small>
+                </div>
+            `;
+            cartSummaryDiv.style.display = 'none';
+            return;
+        }
+        
+        // Show cart items
+        let html = '';
+        let subtotal = 0;
+        
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+            
+            html += `
+                <div class="cart-item">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <strong>${item.name}</strong>
+                            <br><small>৳${item.price} × ${item.quantity}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong>৳${itemTotal.toFixed(2)}</strong>
+                            <br>
+                            <button type="button" class="btn btn-sm btn-outline-light mt-1" 
+                                    onclick="removeFromCart(${item.id})">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        cartItemsDiv.innerHTML = html;
+        cartSummaryDiv.style.display = 'block';
+        
+        // Calculate totals
+        const serviceCharge = subtotal * 0.05;
+        const total = subtotal + serviceCharge;
+        
+        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('serviceCharge').textContent = serviceCharge.toFixed(2);
+        document.getElementById('total').textContent = total.toFixed(2);
+    }
+    
+    // Remove from cart
+    function removeFromCart(itemId) {
+        cart = cart.filter(item => item.id !== itemId);
+        updateCart();
+    }
+    
+    // Clear cart
+    function clearCart() {
+        if (confirm('Clear all items from cart?')) {
+            cart = [];
+            updateCart();
+        }
+    }
+    
+    // Place order
+    function placeOrder() {
+        if (cart.length === 0) {
+            alert('Your cart is empty');
+            return;
+        }
+        
+        const deliveryLocation = document.getElementById('deliveryLocation').value;
+        const specialInstructions = document.getElementById('specialInstructions').value;
+        
+        // This would submit via AJAX
+        const orderData = {
+            items: cart,
+            delivery_location: deliveryLocation,
+            special_instructions: specialInstructions
+        };
+        
+        console.log('Order data:', orderData);
+        
+        // Show success message
+        alert('Order placed successfully! Your order will be delivered soon.');
+        
+        // Clear cart
+        cart = [];
+        updateCart();
+        document.getElementById('specialInstructions').value = '';
+    }
+    
+    // Filter by type
+    function filterByType(type) {
+        const items = document.querySelectorAll('[data-item-type]');
+        
+        items.forEach(item => {
+            if (type === 'all') {
+                item.style.display = 'block';
+            } else {
+                if (item.dataset.itemType === type) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            }
+        });
+    }
+    
+    // Show toast notification
+    function showToast(message) {
+        // Simple toast implementation
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-body bg-success text-white">
+                    <i class="fas fa-check-circle"></i> ${message}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+</script>
+{% endblock %}

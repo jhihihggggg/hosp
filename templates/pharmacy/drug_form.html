@@ -1,0 +1,728 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Pharmacy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .drug-form-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .barcode-preview {
+        border: 2px dashed #dee2e6;
+        padding: 20px;
+        text-align: center;
+        background-color: white;
+        border-radius: 8px;
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .pricing-calculator {
+        background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%);
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .price-display {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #198754;
+    }
+    
+    .expiry-warning {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    
+    .stock-level-indicator {
+        height: 30px;
+        background-color: #e9ecef;
+        border-radius: 15px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .stock-level-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #198754 0%, #0d6efd 100%);
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-pills text-primary"></i> {{ title }}
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'pharmacy_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'pharmacy:drug_list' %}">Inventory</a></li>
+                            <li class="breadcrumb-item active">{{ title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Inventory
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="drugForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-lg-8">
+                <div class="card drug-form-card">
+                    <div class="card-body">
+                        <!-- Pricing Calculator -->
+                        <div class="pricing-calculator">
+                            <div class="row">
+                                <div class="col-md-4 text-center">
+                                    <small class="text-muted">Purchase Price</small>
+                                    <div class="price-display">৳ <span id="purchasePriceDisplay">0.00</span></div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <small class="text-muted">Profit Margin</small>
+                                    <div class="price-display text-info"><span id="profitMarginDisplay">0</span>%</div>
+                                </div>
+                                <div class="col-md-4 text-center">
+                                    <small class="text-muted">Sale Price</small>
+                                    <div class="price-display text-success">৳ <span id="salePriceDisplay">0.00</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-info-circle text-primary"></i> Basic Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ form.name.id_for_label }}" class="form-label required-field">
+                                        Medicine Name (Brand Name)
+                                    </label>
+                                    {{ form.name }}
+                                    {% if form.name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.strength.id_for_label }}" class="form-label">
+                                        Strength
+                                    </label>
+                                    {{ form.strength }}
+                                    <small class="form-text text-muted">e.g., 500mg, 10ml</small>
+                                    {% if form.strength.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.strength.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.generic_name.id_for_label }}" class="form-label required-field">
+                                        Generic Name
+                                    </label>
+                                    {{ form.generic_name }}
+                                    {% if form.generic_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.generic_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label required-field">
+                                        Category
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.category.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.dosage_form.id_for_label }}" class="form-label required-field">
+                                        Dosage Form
+                                    </label>
+                                    {{ form.dosage_form }}
+                                    {% if form.dosage_form.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.dosage_form.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.manufacturer.id_for_label }}" class="form-label">
+                                        Manufacturer
+                                    </label>
+                                    {{ form.manufacturer }}
+                                    {% if form.manufacturer.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.manufacturer.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.country_of_origin.id_for_label }}" class="form-label">
+                                        Country of Origin
+                                    </label>
+                                    {{ form.country_of_origin }}
+                                    {% if form.country_of_origin.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.country_of_origin.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    Description
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Stock Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-boxes text-success"></i> Stock Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.current_stock.id_for_label }}" class="form-label required-field">
+                                        Current Stock
+                                    </label>
+                                    {{ form.current_stock }}
+                                    {% if form.current_stock.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.current_stock.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.minimum_stock.id_for_label }}" class="form-label required-field">
+                                        Minimum Stock Level
+                                    </label>
+                                    {{ form.minimum_stock }}
+                                    <small class="form-text text-muted">Reorder alert threshold</small>
+                                    {% if form.minimum_stock.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.minimum_stock.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.reorder_quantity.id_for_label }}" class="form-label">
+                                        Reorder Quantity
+                                    </label>
+                                    {{ form.reorder_quantity }}
+                                    {% if form.reorder_quantity.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.reorder_quantity.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Stock Level Indicator -->
+                            <div class="mb-3">
+                                <label class="form-label">Stock Level Indicator</label>
+                                <div class="stock-level-indicator">
+                                    <div class="stock-level-bar" id="stockLevelBar" style="width: 0%;">
+                                        0%
+                                    </div>
+                                </div>
+                                <small class="text-muted">Shows current stock vs. minimum stock level</small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.unit.id_for_label }}" class="form-label required-field">
+                                        Unit of Measurement
+                                    </label>
+                                    {{ form.unit }}
+                                    {% if form.unit.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.unit.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.pack_size.id_for_label }}" class="form-label">
+                                        Pack Size
+                                    </label>
+                                    {{ form.pack_size }}
+                                    <small class="form-text text-muted">e.g., 10 tablets per strip</small>
+                                    {% if form.pack_size.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.pack_size.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pricing Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-dollar-sign text-info"></i> Pricing Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.purchase_price.id_for_label }}" class="form-label required-field">
+                                        Purchase Price (৳)
+                                    </label>
+                                    {{ form.purchase_price }}
+                                    {% if form.purchase_price.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.purchase_price.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.sale_price.id_for_label }}" class="form-label required-field">
+                                        Sale Price (৳)
+                                    </label>
+                                    {{ form.sale_price }}
+                                    {% if form.sale_price.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.sale_price.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.mrp.id_for_label }}" class="form-label">
+                                        MRP (৳)
+                                    </label>
+                                    {{ form.mrp }}
+                                    <small class="form-text text-muted">Maximum Retail Price</small>
+                                    {% if form.mrp.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.mrp.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-calculator"></i> <strong>Auto-calculate Sale Price:</strong>
+                                Enter purchase price and profit margin % to automatically calculate sale price
+                            </div>
+                        </div>
+
+                        <!-- Expiry & Batch Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-calendar-alt text-warning"></i> Expiry & Batch Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.batch_number.id_for_label }}" class="form-label">
+                                        Batch Number
+                                    </label>
+                                    {{ form.batch_number }}
+                                    {% if form.batch_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.batch_number.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.expiry_date.id_for_label }}" class="form-label required-field">
+                                        Expiry Date
+                                    </label>
+                                    {{ form.expiry_date }}
+                                    {% if form.expiry_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.expiry_date.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div id="expiryWarning" class="expiry-warning" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Expiry Warning:</strong> <span id="expiryWarningText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Identification & Tracking -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-barcode text-secondary"></i> Identification & Tracking
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.barcode.id_for_label }}" class="form-label">
+                                        Barcode
+                                    </label>
+                                    {{ form.barcode }}
+                                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="generateBarcode()">
+                                        <i class="fas fa-sync"></i> Auto-generate
+                                    </button>
+                                    {% if form.barcode.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.barcode.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.shelf_location.id_for_label }}" class="form-label">
+                                        Shelf Location
+                                    </label>
+                                    {{ form.shelf_location }}
+                                    <small class="form-text text-muted">e.g., A-12, B-05</small>
+                                    {% if form.shelf_location.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.shelf_location.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="barcode-preview">
+                                <div>
+                                    <div id="barcodeDisplay" style="font-family: 'Courier New', monospace; font-size: 24px; letter-spacing: 2px;">
+                                        ||||  ||  ||||  ||  ||||
+                                    </div>
+                                    <div id="barcodeNumber" class="mt-2">Barcode will appear here</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-info text-primary"></i> Additional Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.requires_prescription.id_for_label }}" class="form-label">
+                                        Prescription Requirement
+                                    </label>
+                                    <div class="form-check form-switch">
+                                        {{ form.requires_prescription }}
+                                        <label class="form-check-label" for="{{ form.requires_prescription.id_for_label }}">
+                                            Requires valid prescription to dispense
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.is_active.id_for_label }}" class="form-label">
+                                        Status
+                                    </label>
+                                    <div class="form-check form-switch">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            Active (Available for sale)
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.special_instructions.id_for_label }}" class="form-label">
+                                    Special Instructions/Storage Conditions
+                                </label>
+                                {{ form.special_instructions }}
+                                <small class="form-text text-muted">
+                                    e.g., Store in refrigerator, Keep away from light, etc.
+                                </small>
+                                {% if form.special_instructions.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.special_instructions.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'pharmacy:drug_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="button" class="btn btn-outline-info" onclick="printLabel()">
+                                <i class="fas fa-print"></i> Print Label
+                            </button>
+                            <button type="submit" name="action" value="save" class="btn btn-success">
+                                <i class="fas fa-save"></i> Save Medicine
+                            </button>
+                            <button type="submit" name="action" value="save_and_add" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Save & Add Another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Reference -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle"></i> Quick Reference
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-primary">Dosage Forms:</h6>
+                        <ul class="small mb-3">
+                            <li>Tablet, Capsule, Syrup</li>
+                            <li>Injection, Drops, Ointment</li>
+                            <li>Cream, Gel, Powder</li>
+                            <li>Inhaler, Suppository</li>
+                        </ul>
+                        
+                        <h6 class="text-primary">Common Categories:</h6>
+                        <ul class="small mb-0">
+                            <li>Antibiotics</li>
+                            <li>Analgesics</li>
+                            <li>Antihistamines</li>
+                            <li>Antihypertensives</li>
+                            <li>Vitamins & Supplements</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Stock Status -->
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-warehouse"></i> Inventory Summary
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Total Items:</span>
+                            <strong>{{ total_drugs|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Low Stock:</span>
+                            <strong class="text-warning">{{ low_stock_count|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Out of Stock:</span>
+                            <strong class="text-danger">{{ out_of_stock_count|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Expiring Soon:</span>
+                            <strong class="text-warning">{{ expiring_soon_count|default:"0" }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Additions -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i> Recent Additions
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for drug in recent_drugs %}
+                            <div class="list-group-item">
+                                <strong>{{ drug.name }}</strong>
+                                <br><small class="text-muted">{{ drug.generic_name }}</small>
+                                <br><small class="text-success">Stock: {{ drug.current_stock }}</small>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center text-muted">
+                                No recent additions
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calculate pricing
+    function calculatePricing() {
+        const purchasePrice = parseFloat(document.getElementById('{{ form.purchase_price.id_for_label }}').value) || 0;
+        const salePrice = parseFloat(document.getElementById('{{ form.sale_price.id_for_label }}').value) || 0;
+        
+        let profitMargin = 0;
+        if (purchasePrice > 0 && salePrice > 0) {
+            profitMargin = ((salePrice - purchasePrice) / purchasePrice * 100).toFixed(2);
+        }
+        
+        document.getElementById('purchasePriceDisplay').textContent = purchasePrice.toFixed(2);
+        document.getElementById('salePriceDisplay').textContent = salePrice.toFixed(2);
+        document.getElementById('profitMarginDisplay').textContent = profitMargin;
+    }
+    
+    // Calculate stock level
+    function calculateStockLevel() {
+        const currentStock = parseInt(document.getElementById('{{ form.current_stock.id_for_label }}').value) || 0;
+        const minimumStock = parseInt(document.getElementById('{{ form.minimum_stock.id_for_label }}').value) || 0;
+        
+        if (minimumStock > 0) {
+            const percentage = Math.min((currentStock / minimumStock) * 100, 100);
+            const bar = document.getElementById('stockLevelBar');
+            bar.style.width = percentage + '%';
+            bar.textContent = Math.round(percentage) + '%';
+            
+            // Color coding
+            if (percentage < 50) {
+                bar.style.background = 'linear-gradient(90deg, #dc3545 0%, #f8d7da 100%)';
+            } else if (percentage < 100) {
+                bar.style.background = 'linear-gradient(90deg, #ffc107 0%, #fff3cd 100%)';
+            } else {
+                bar.style.background = 'linear-gradient(90deg, #198754 0%, #d1e7dd 100%)';
+            }
+        }
+    }
+    
+    // Check expiry date
+    function checkExpiryDate() {
+        const expiryDate = document.getElementById('{{ form.expiry_date.id_for_label }}').value;
+        if (expiryDate) {
+            const expiry = new Date(expiryDate);
+            const today = new Date();
+            const threeMonths = new Date();
+            threeMonths.setMonth(threeMonths.getMonth() + 3);
+            
+            const warningDiv = document.getElementById('expiryWarning');
+            const warningText = document.getElementById('expiryWarningText');
+            
+            if (expiry < today) {
+                warningDiv.style.display = 'block';
+                warningDiv.style.backgroundColor = '#f8d7da';
+                warningDiv.style.borderColor = '#dc3545';
+                warningText.textContent = 'This medicine is already expired!';
+            } else if (expiry < threeMonths) {
+                warningDiv.style.display = 'block';
+                warningDiv.style.backgroundColor = '#fff3cd';
+                warningDiv.style.borderColor = '#ffc107';
+                const months = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24 * 30));
+                warningText.textContent = `This medicine will expire in ${months} month(s).`;
+            } else {
+                warningDiv.style.display = 'none';
+            }
+        }
+    }
+    
+    // Generate barcode
+    function generateBarcode() {
+        const barcode = 'MED' + Date.now().toString().slice(-10);
+        document.getElementById('{{ form.barcode.id_for_label }}').value = barcode;
+        document.getElementById('barcodeNumber').textContent = barcode;
+    }
+    
+    // Print label
+    function printLabel() {
+        alert('Label printing functionality will open print dialog');
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach listeners
+        document.getElementById('{{ form.purchase_price.id_for_label }}').addEventListener('input', calculatePricing);
+        document.getElementById('{{ form.sale_price.id_for_label }}').addEventListener('input', calculatePricing);
+        document.getElementById('{{ form.current_stock.id_for_label }}').addEventListener('input', calculateStockLevel);
+        document.getElementById('{{ form.minimum_stock.id_for_label }}').addEventListener('input', calculateStockLevel);
+        document.getElementById('{{ form.expiry_date.id_for_label }}').addEventListener('change', checkExpiryDate);
+        
+        // Initial calculations
+        calculatePricing();
+        calculateStockLevel();
+        checkExpiryDate();
+        
+        // Set minimum expiry date to today
+        const expiryInput = document.getElementById('{{ form.expiry_date.id_for_label }}');
+        const today = new Date().toISOString().split('T')[0];
+        expiryInput.setAttribute('min', today);
+    });
+    
+    // Form validation
+    document.getElementById('drugForm').addEventListener('submit', function(e) {
+        const purchasePrice = parseFloat(document.getElementById('{{ form.purchase_price.id_for_label }}').value) || 0;
+        const salePrice = parseFloat(document.getElementById('{{ form.sale_price.id_for_label }}').value) || 0;
+        
+        if (salePrice < purchasePrice) {
+            if (!confirm('Sale price is less than purchase price. This will result in a loss. Continue?')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

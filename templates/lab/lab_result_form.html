@@ -1,0 +1,617 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Enter Lab Results - Laboratory{% endblock %}
+
+{% block extra_css %}
+<style>
+    .result-form-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .order-summary {
+        background: linear-gradient(135deg, #e7f3ff 0%, #cfe2ff 100%);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .test-result-row {
+        background-color: white;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+    }
+    
+    .test-result-row:hover {
+        border-color: #0d6efd;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .test-result-row.abnormal {
+        border-left: 5px solid #dc3545;
+        background-color: #fff5f5;
+    }
+    
+    .reference-range-box {
+        background-color: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    
+    .result-input {
+        font-size: 1.2rem;
+        font-weight: bold;
+        border: 2px solid #0d6efd;
+    }
+    
+    .result-input:focus {
+        border-color: #0a58ca;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    
+    .abnormal-indicator {
+        position: absolute;
+        top: -10px;
+        right: -10px;
+        width: 40px;
+        height: 40px;
+        background-color: #dc3545;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+    
+    .status-selector {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .status-btn {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    
+    .status-btn.selected {
+        border-color: #198754;
+        background-color: #d1e7dd;
+        font-weight: bold;
+    }
+    
+    .status-btn.high.selected {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+    }
+    
+    .status-btn.low.selected {
+        border-color: #ffc107;
+        background-color: #fff3cd;
+    }
+    
+    .quick-fill-buttons {
+        display: flex;
+        gap: 5px;
+        margin-top: 10px;
+    }
+    
+    .progress-indicator {
+        margin-bottom: 20px;
+    }
+    
+    .progress-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-microscope text-info"></i> Enter Lab Results
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'lab_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'lab:order_list' %}">Orders</a></li>
+                            <li class="breadcrumb-item active">Enter Results</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                        <i class="fas fa-save"></i> Save Draft
+                    </button>
+                    <a href="{% url 'lab:order_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="resultForm">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-lg-8">
+                <!-- Order Summary -->
+                <div class="order-summary">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">Order Information</h5>
+                            <p class="mb-1"><strong>Order ID:</strong> {{ order.order_number }}</p>
+                            <p class="mb-1"><strong>Order Date:</strong> {{ order.created_at|date:"d M, Y h:i A" }}</p>
+                            <p class="mb-1"><strong>Collection Date:</strong> {{ order.collection_date|date:"d M, Y" }}</p>
+                            <p class="mb-1"><strong>Urgency:</strong> 
+                                <span class="badge bg-{{ order.urgency_color }}">{{ order.get_urgency_display }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">Patient Information</h5>
+                            <p class="mb-1"><strong>Name:</strong> {{ order.patient.full_name }}</p>
+                            <p class="mb-1"><strong>Age/Gender:</strong> {{ order.patient.age }} / {{ order.patient.get_gender_display }}</p>
+                            <p class="mb-1"><strong>Patient ID:</strong> {{ order.patient.patient_id }}</p>
+                            {% if order.clinical_notes %}
+                            <p class="mb-0">
+                                <small class="text-muted">
+                                    <i class="fas fa-notes-medical"></i> <strong>Clinical Notes:</strong> {{ order.clinical_notes }}
+                                </small>
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Indicator -->
+                <div class="progress-indicator mb-4">
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: 0%" id="progressBar">
+                            <strong><span id="progressText">0</span> of {{ total_tests }} tests completed</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Results -->
+                <div class="card result-form-card">
+                    <div class="card-body">
+                        <h5 class="mb-4">
+                            <i class="fas fa-flask text-success"></i> Test Results Entry
+                        </h5>
+
+                        {% for test in tests %}
+                        <div class="test-result-row position-relative" data-test-id="{{ test.id }}">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <h5 class="text-primary">{{ forloop.counter }}. {{ test.name }}</h5>
+                                    {% if test.description %}
+                                    <p class="text-muted small mb-2">{{ test.description }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label required-field">Result Value</label>
+                                    <input type="text" name="result_value[]" 
+                                           class="form-control result-input" 
+                                           placeholder="Enter result"
+                                           data-test-id="{{ test.id }}"
+                                           required>
+                                    <input type="hidden" name="test_id[]" value="{{ test.id }}">
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Unit</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{ test.unit }}" readonly>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Reference Range</label>
+                                    <div class="reference-range-box">
+                                        <strong>{{ test.reference_range|default:"N/A" }}</strong>
+                                        {% if test.reference_notes %}
+                                        <br><small class="text-muted">{{ test.reference_notes }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Status</label>
+                                    <div class="status-selector">
+                                        <div class="status-btn normal" onclick="selectStatus({{ test.id }}, 'normal')">
+                                            <i class="fas fa-check-circle text-success"></i> Normal
+                                        </div>
+                                        <div class="status-btn high" onclick="selectStatus({{ test.id }}, 'high')">
+                                            <i class="fas fa-arrow-up text-danger"></i> High
+                                        </div>
+                                        <div class="status-btn low" onclick="selectStatus({{ test.id }}, 'low')">
+                                            <i class="fas fa-arrow-down text-warning"></i> Low
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="status[]" id="status-{{ test.id }}" value="normal">
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Methodology</label>
+                                    <input type="text" name="methodology[]" class="form-control" 
+                                           placeholder="e.g., ELISA, PCR, etc."
+                                           value="{{ test.default_methodology }}">
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Interpretation/Comments</label>
+                                    <textarea name="interpretation[]" class="form-control" rows="2" 
+                                              placeholder="Optional interpretation or comments about this result"></textarea>
+                                </div>
+
+                                <!-- Quick Fill Buttons -->
+                                {% if test.common_values %}
+                                <div class="col-md-12">
+                                    <small class="text-muted">Quick Fill:</small>
+                                    <div class="quick-fill-buttons">
+                                        {% for value in test.common_values %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" 
+                                                onclick="quickFill({{ test.id }}, '{{ value }}')">
+                                            {{ value }}
+                                        </button>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Abnormal Indicator (hidden by default) -->
+                            <div class="abnormal-indicator" id="abnormal-{{ test.id }}" style="display: none;">
+                                <i class="fas fa-exclamation"></i>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Overall Interpretation -->
+                        <div class="form-section mt-4">
+                            <h5 class="mb-3">
+                                <i class="fas fa-comment-medical text-warning"></i> Overall Interpretation
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Overall Report Summary</label>
+                                <textarea name="overall_interpretation" class="form-control" rows="4" 
+                                          placeholder="Provide an overall interpretation of the test results"></textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Lab Comments/Notes</label>
+                                <textarea name="lab_notes" class="form-control" rows="3" 
+                                          placeholder="Any special observations or quality control notes"></textarea>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="criticalValues" name="has_critical_values">
+                                <label class="form-check-label" for="criticalValues">
+                                    <strong class="text-danger">This report contains critical values</strong>
+                                    <br><small class="text-muted">Check this if results require immediate medical attention</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Quality Control -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-check-double text-success"></i> Quality Control
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label required-field">Performed By (Technician)</label>
+                                    <select name="technician" class="form-select" required>
+                                        <option value="">Select Technician</option>
+                                        {% for tech in technicians %}
+                                        <option value="{{ tech.id }}" {% if tech.id == user.id %}selected{% endif %}>
+                                            {{ tech.get_full_name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Equipment Used</label>
+                                    <input type="text" name="equipment_used" class="form-control" 
+                                           placeholder="e.g., Analyzer Model XYZ">
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Report Date</label>
+                                    <input type="date" name="report_date" class="form-control" 
+                                           value="{{ today }}" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Report Time</label>
+                                    <input type="time" name="report_time" class="form-control" 
+                                           value="{{ now }}" required>
+                                </div>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="qcPassed" name="qc_passed" checked required>
+                                <label class="form-check-label" for="qcPassed">
+                                    <strong>Quality control measures passed</strong>
+                                    <br><small class="text-muted">Confirm that all QC procedures were followed</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2 justify-content-end mt-4">
+                            <a href="{% url 'lab:order_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="button" class="btn btn-outline-warning" onclick="saveDraft()">
+                                <i class="fas fa-save"></i> Save Draft
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="previewReport()">
+                                <i class="fas fa-eye"></i> Preview Report
+                            </button>
+                            <button type="submit" name="action" value="submit" class="btn btn-success">
+                                <i class="fas fa-check"></i> Submit Results
+                            </button>
+                            <button type="submit" name="action" value="submit_and_verify" class="btn btn-primary">
+                                <i class="fas fa-check-double"></i> Submit & Verify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Progress Summary -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks"></i> Progress
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="display-4" id="completionPercent">0%</div>
+                            <small class="text-muted">Tests Completed</small>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-circle text-success"></i> Normal: <strong id="normalCount">0</strong>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-circle text-danger"></i> High: <strong id="highCount">0</strong>
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-circle text-warning"></i> Low: <strong id="lowCount">0</strong>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bolt"></i> Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" 
+                                onclick="markAllNormal()">
+                            <i class="fas fa-check-circle"></i> Mark All as Normal
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary w-100 mb-2" 
+                                onclick="clearAllResults()">
+                            <i class="fas fa-eraser"></i> Clear All Results
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info w-100" 
+                                onclick="autoSave()">
+                            <i class="fas fa-save"></i> Auto-Save
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reference Guide -->
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-book"></i> Quick Reference
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="text-warning">Status Indicators:</h6>
+                        <ul class="small mb-3">
+                            <li><strong>Normal:</strong> Within reference range</li>
+                            <li><strong>High:</strong> Above upper limit</li>
+                            <li><strong>Low:</strong> Below lower limit</li>
+                        </ul>
+                        
+                        <h6 class="text-warning">Critical Values:</h6>
+                        <p class="small mb-0">
+                            Check "Critical Values" checkbox if results indicate immediate medical attention is needed. Examples: Extremely high glucose, very low hemoglobin, etc.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const totalTests = {{ total_tests }};
+    let completedTests = 0;
+    let statusCounts = { normal: 0, high: 0, low: 0 };
+    
+    // Select status
+    function selectStatus(testId, status) {
+        // Remove selected class from all siblings
+        const parentDiv = document.querySelector(`[data-test-id="${testId}"]`);
+        parentDiv.querySelectorAll('.status-btn').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        // Add selected class to clicked button
+        const selectedBtn = parentDiv.querySelector(`.status-btn.${status}`);
+        selectedBtn.classList.add('selected');
+        
+        // Update hidden input
+        document.getElementById(`status-${testId}`).value = status;
+        
+        // Show/hide abnormal indicator
+        const abnormalIndicator = document.getElementById(`abnormal-${testId}`);
+        if (status !== 'normal') {
+            abnormalIndicator.style.display = 'flex';
+            parentDiv.parentElement.classList.add('abnormal');
+        } else {
+            abnormalIndicator.style.display = 'none';
+            parentDiv.parentElement.classList.remove('abnormal');
+        }
+        
+        updateProgress();
+    }
+    
+    // Quick fill
+    function quickFill(testId, value) {
+        const input = document.querySelector(`input[data-test-id="${testId}"]`);
+        input.value = value;
+        updateProgress();
+    }
+    
+    // Update progress
+    function updateProgress() {
+        completedTests = 0;
+        statusCounts = { normal: 0, high: 0, low: 0 };
+        
+        // Count completed tests
+        document.querySelectorAll('.result-input').forEach(input => {
+            if (input.value.trim() !== '') {
+                completedTests++;
+            }
+        });
+        
+        // Count status
+        document.querySelectorAll('[name="status[]"]').forEach(input => {
+            if (input.value in statusCounts) {
+                statusCounts[input.value]++;
+            }
+        });
+        
+        // Update progress bar
+        const percentage = (completedTests / totalTests) * 100;
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = percentage + '%';
+        document.getElementById('progressText').textContent = completedTests;
+        document.getElementById('completionPercent').textContent = Math.round(percentage) + '%';
+        
+        // Update status counts
+        document.getElementById('normalCount').textContent = statusCounts.normal;
+        document.getElementById('highCount').textContent = statusCounts.high;
+        document.getElementById('lowCount').textContent = statusCounts.low;
+    }
+    
+    // Mark all as normal
+    function markAllNormal() {
+        document.querySelectorAll('.test-result-row').forEach(row => {
+            const testId = row.dataset.testId;
+            selectStatus(testId, 'normal');
+        });
+    }
+    
+    // Clear all results
+    function clearAllResults() {
+        if (confirm('Clear all entered results?')) {
+            document.querySelectorAll('.result-input').forEach(input => {
+                input.value = '';
+            });
+            updateProgress();
+        }
+    }
+    
+    // Save draft
+    function saveDraft() {
+        alert('Draft saved successfully');
+    }
+    
+    // Preview report
+    function previewReport() {
+        window.open('{% url "lab:report_preview" order.id %}', '_blank');
+    }
+    
+    // Auto-save every 2 minutes
+    function autoSave() {
+        // Implementation would save via AJAX
+        console.log('Auto-saving...');
+    }
+    
+    setInterval(autoSave, 120000);
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach input listeners
+        document.querySelectorAll('.result-input').forEach(input => {
+            input.addEventListener('input', updateProgress);
+        });
+        
+        // Select first status button as default for each test
+        document.querySelectorAll('.test-result-row').forEach(row => {
+            const testId = row.dataset.testId;
+            selectStatus(testId, 'normal');
+        });
+        
+        updateProgress();
+    });
+    
+    // Form validation
+    document.getElementById('resultForm').addEventListener('submit', function(e) {
+        if (completedTests < totalTests) {
+            if (!confirm(`Only ${completedTests} of ${totalTests} tests have results. Submit anyway?`)) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

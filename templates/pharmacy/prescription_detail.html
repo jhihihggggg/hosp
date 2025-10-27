@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prescription Details{% endblock %}
+
+{% block extra_css %}
+<style>
+.pres-header{background:#fff;border-radius:12px;padding:20px;box-shadow:0 4px 10px rgba(0,0,0,0.05)}
+.med-item{border-left:4px solid #0d6efd;padding:12px;border-radius:6px;margin-bottom:10px;background:#f8f9fa}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8">
+      <div class="pres-header">
+        <h3>Prescription #{{ prescription.id }}</h3>
+        <p class="mb-1"><strong>Patient:</strong> {{ patient.full_name }}</p>
+        <p class="mb-1"><strong>Doctor:</strong> Dr. {{ prescription.appointment.doctor.get_full_name }}</p>
+        <p class="mb-1"><strong>Date:</strong> {{ prescription.appointment.scheduled_time|date:"d M, Y" }}</p>
+      </div>
+      
+      <div class="card mt-3">
+        <div class="card-body">
+          <h5>Medications</h5>
+          {% for med in prescription.medications.all %}
+          <div class="med-item">
+            <strong>{{ med.drug.brand_name }}</strong> ({{ med.drug.generic_name }})
+            <div><small>Dosage: {{ med.dosage }} | Frequency: {{ med.frequency }} | Duration: {{ med.duration }}</small></div>
+            {% if med.instructions %}
+            <div><small class="text-muted">Instructions: {{ med.instructions }}</small></div>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p class="text-muted">No medications prescribed</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-body">
+          <h5>Actions</h5>
+          <div class="d-grid gap-2">
+            <a href="{% url 'pharmacy:prescription_process' prescription.id %}" class="btn btn-primary">Process</a>
+            <a href="{% url 'pharmacy:prescription_print' prescription.id %}" class="btn btn-outline-secondary" target="_blank">Print</a>
+            <button class="btn btn-success" onclick="dispense({{ prescription.id }})">Mark Dispensed</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function dispense(id){
+  if(confirm('Mark as dispensed?')){
+    fetch(`/pharmacy/prescription/${id}/dispense/`,{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token }}'}})
+      .then(()=>location.reload())
+  }
+}
+</script>
+{% endblock %}

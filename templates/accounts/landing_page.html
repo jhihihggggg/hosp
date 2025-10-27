@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ইউনিভার্সাল হেলথ সার্ভিসেস এন্ড ডায়াগনস্টিক - Universal Health Services</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Tiro+Bangla:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #dc3545;
+            --primary-green: #28a745;
+            --primary-blue: #1565C0;
+            --dark-green: #1e7e34;
+            --light-bg: #f8f9fa;
+        }
+        
+        body {
+            font-family: 'Hind Siliguri', 'Segoe UI', Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .bangla-text {
+            font-family: 'Tiro Bangla', 'Hind Siliguri', serif;
+        }
+        
+        /* Top Header Bar */
+        .top-header {
+            background: var(--primary-blue);
+            color: white;
+            padding: 8px 0;
+            font-size: 0.9rem;
+        }
+        
+        .top-header a {
+            color: white;
+            text-decoration: none;
+        }
+        
+        .top-header i {
+            margin-right: 5px;
+        }
+        
+        /* Main Header */
+        .main-header {
+            background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+            color: white;
+            padding: 30px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .hospital-name-bangla {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            line-height: 1.3;
+        }
+        
+        .hospital-name-english {
+            font-size: 1.5rem;
+            font-weight: 600;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+        
+        .hospital-tagline {
+            font-size: 1rem;
+            opacity: 0.9;
+            border-top: 2px solid rgba(255,255,255,0.3);
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        /* Navigation */
+        .main-nav {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 0;
+        }
+        
+        .main-nav .nav-link {
+            color: #333;
+            font-weight: 500;
+            padding: 15px 20px;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .main-nav .nav-link:hover {
+            color: var(--primary-red);
+            border-bottom-color: var(--primary-red);
+            background: #f8f9fa;
+        }
+        
+        .btn-book-appointment {
+            background: var(--primary-red);
+            color: white;
+            font-weight: 600;
+            padding: 10px 30px;
+            border-radius: 25px;
+            border: none;
+            transition: all 0.3s;
+            margin: 8px 0;
+        }
+        
+        .btn-book-appointment:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        }
+        
+        /* Announcement Banner */
+        .announcement-banner {
+            background: linear-gradient(90deg, var(--primary-red) 0%, #bd2130 100%);
+            color: white;
+            padding: 12px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+        
+        .announcement-banner i {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        /* Services Section */
+        .services-section {
+            padding: 60px 0;
+            background: var(--light-bg);
+        }
+        
+        .section-title-bangla {
+            font-size: 2.2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 15px;
+            color: var(--primary-blue);
+        }
+        
+        .section-title-english {
+            font-size: 1.3rem;
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 40px;
+            color: #666;
+        }
+        
+        .service-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            height: 100%;
+            border-top: 4px solid var(--primary-green);
+        }
+        
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        
+        .service-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+        
+        .service-icon i {
+            font-size: 1.8rem;
+            color: white;
+        }
+        
+        .service-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        /* Doctors Section - Like Bangladeshi Signboards */
+        .doctors-section {
+            padding: 60px 0;
+            background: white;
+        }
+        
+        .doctor-card {
+            background: white;
+            border: 3px solid var(--primary-green);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            margin-bottom: 30px;
+            transition: all 0.3s;
+        }
+        
+        .doctor-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .doctor-card-header {
+            background: var(--primary-red);
+            color: white;
+            padding: 12px 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+        
+        .doctor-card-body {
+            padding: 25px 20px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%);
+        }
+        
+        .doctor-photo-placeholder {
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            border: 3px solid var(--primary-green);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            overflow: hidden;
+        }
+        
+        .doctor-photo-placeholder i {
+            font-size: 3rem;
+            color: #6c757d;
+        }
+        
+        .doctor-name-bangla {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #000;
+            text-align: center;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .doctor-qualifications {
+            font-size: 0.85rem;
+            color: #495057;
+            text-align: center;
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        
+        .doctor-specialty-badge {
+            background: #fff3cd;
+            color: #856404;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-block;
+            margin: 3px;
+        }
+        
+        .doctor-card-footer {
+            background: var(--dark-green);
+            color: white;
+            padding: 12px 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .timing-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        /* Stats/Info Section */
+        .stats-section {
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+            color: white;
+            padding: 50px 0;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            opacity: 0.9;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        /* Contact Info Bar */
+        .contact-info-bar {
+            background: #343a40;
+            color: white;
+            padding: 30px 0;
+        }
+        
+        .contact-item {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .contact-item i {
+            font-size: 2rem;
+            color: var(--primary-red);
+            margin-bottom: 10px;
+        }
+        
+        .contact-item h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .contact-item p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        /* Footer */
+        .footer {
+            background: #212529;
+            color: white;
+            padding: 30px 0;
+            text-align: center;
+        }
+        
+        .footer-links a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: var(--primary-red);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hospital-name-bangla {
+                font-size: 1.8rem;
+            }
+            
+            .hospital-name-english {
+                font-size: 1.2rem;
+            }
+            
+            .doctor-name-bangla {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Top Header Bar -->
+    <div class="top-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <i class="fas fa-phone-alt"></i> <span class="bangla-text">মোবাইল:</span> ০১৭৩২-৮৫৩৩০৩
+                    <span class="ms-3">
+                        <i class="fas fa-envelope"></i> universalhealthbd@gmail.com
+                    </span>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <a href="{% url 'accounts:login' %}" class="me-3">
+                        <i class="fas fa-user-lock"></i> <span class="bangla-text">স্টাফ লগইন</span> / Staff Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Header -->
+    <header class="main-header">
+        <div class="container">
+            <div class="text-center">
+                <h1 class="hospital-name-bangla bangla-text">
+                    <i class="fas fa-hospital-symbol me-2"></i>
+                    ইউনিভার্সাল হেলথ সার্ভিসেস এন্ড ডায়াগনস্টিক সেন্টার
+                </h1>
+                <h2 class="hospital-name-english">
+                    UNIVERSAL HEALTH SERVICES & DIAGNOSTIC CENTER
+                </h2>
+                <p class="hospital-tagline bangla-text">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    সাদিয়া প্যালেস, বাজার রোড, নজিপুর সরদারপাড়া মোড়, নজিপুর পৌরসদ, পত্নীতলা, নওগাঁ
+                </p>
+                <p class="hospital-tagline bangla-text" style="border-top: none; padding-top: 5px; margin-top: 5px;">
+                    <i class="fas fa-phone-alt me-2"></i>
+                    মোবাইল: ০১৭৩২-৮৫৩৩০৩
+                </p>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Navigation -->
+    <nav class="main-nav">
+        <div class="container">
+            <div class="d-flex justify-content-center align-items-center flex-wrap">
+                <a href="#services" class="nav-link">
+                    <i class="fas fa-concierge-bell me-1"></i> সেবা সমূহ
+                </a>
+                <a href="#doctors" class="nav-link">
+                    <i class="fas fa-user-md me-1"></i> ডাক্তার তালিকা
+                </a>
+                <a href="#about" class="nav-link">
+                    <i class="fas fa-info-circle me-1"></i> আমাদের সম্পর্কে
+                </a>
+                <a href="#contact" class="nav-link">
+                    <i class="fas fa-phone me-1"></i> যোগাযোগ
+                </a>
+                <a href="{% url 'appointments:public_booking' %}" class="btn btn-book-appointment">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    <span class="bangla-text">এখনই অ্যাপয়েন্টমেন্ট নিন</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Announcement Banner -->
+    <div class="announcement-banner">
+        <div class="container">
+            <i class="fas fa-bullhorn me-2"></i>
+            <span class="bangla-text">
+                <strong>বিশেষ দ্রষ্টব্য:</strong> যে সকল বিশেষজ্ঞ ডাক্তারগণ সরাসরি এবং অনলাইনে চিকিৎসা সেবা প্রদান করবেন | 
+                অনলাইনে সিরিয়াল বুকিং চালু আছে
+            </span>
+        </div>
+    </div>
+    
+    <!-- Services Section -->
+    <section id="services" class="services-section">
+        <div class="container">
+            <h2 class="section-title-bangla bangla-text">
+                <i class="fas fa-hospital-user me-2"></i>
+                আমাদের সেবা সমূহ
+            </h2>
+            <p class="section-title-english">Our Medical Services</p>
+            
+            <div class="row">
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">বিশেষজ্ঞ ডাক্তার</h4>
+                        <p class="text-muted small">Expert Doctors</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-flask"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">প্যাথলজি ল্যাব</h4>
+                        <p class="text-muted small">Pathology Lab</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-x-ray"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">এক্স-রে ও আল্ট্রাসনোগ্রাম</h4>
+                        <p class="text-muted small">X-Ray & Ultrasound</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-pills"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">ফার্মেসি</h4>
+                        <p class="text-muted small">Pharmacy</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-heartbeat"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">ইসিজি</h4>
+                        <p class="text-muted small">ECG</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-syringe"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">ইনজেকশন সেবা</h4>
+                        <p class="text-muted small">Injection Service</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-ambulance"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">অ্যাম্বুলেন্স</h4>
+                        <p class="text-muted small">Ambulance</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="service-card">
+                        <div class="service-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h4 class="service-title bangla-text">২৪ ঘণ্টা সেবা</h4>
+                        <p class="text-muted small">24/7 Service</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Doctors Section - Styled like Bangladeshi Signboards -->
+    {% if doctors %}
+    <section id="doctors" class="doctors-section">
+        <div class="container">
+            <h2 class="section-title-bangla bangla-text">
+                <i class="fas fa-user-doctor me-2"></i>
+                আমাদের ডাক্তার তালিকা
+            </h2>
+            <p class="section-title-english">Our Expert Doctors Panel</p>
+            
+            <div class="row">
+                {% for doctor in doctors %}
+                <div class="col-lg-4 col-md-6">
+                    <div class="doctor-card">
+                        <!-- Header with Specialty -->
+                        <div class="doctor-card-header bangla-text">
+                            {% if doctor.specialization %}
+                                {{ doctor.specialization }}
+                            {% else %}
+                                মেডিসিন, হৃদরোগ ও ডায়াবেটিস রোগ বিশেষজ্ঞ
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Body with Doctor Info -->
+                        <div class="doctor-card-body">
+                            <!-- Doctor Photo Placeholder -->
+                            <div class="doctor-photo-placeholder">
+                                <i class="fas fa-user-md"></i>
+                            </div>
+                            
+                            <!-- Doctor Name in Bengali Style -->
+                            <h3 class="doctor-name-bangla bangla-text">
+                                ডাঃ {{ doctor.get_full_name }}
+                            </h3>
+                            
+                            <!-- Qualifications -->
+                            <div class="doctor-qualifications">
+                                {% if doctor.qualification %}
+                                    {{ doctor.qualification }}
+                                {% else %}
+                                    এমবিবিএস (রাজ.), বি.সি.এস (স্বাস্থ্য)<br>
+                                    এফ.সি.পি.এস (মেডিসিন)<br>
+                                    উপজেলা স্বাস্থ্য কর্মকর্তা
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Specialty Badges -->
+                            <div class="text-center mt-2">
+                                {% if doctor.specialization %}
+                                    <span class="doctor-specialty-badge">
+                                        {{ doctor.specialization }}
+                                    </span>
+                                {% else %}
+                                    <span class="doctor-specialty-badge bangla-text">মেডিসিন বিশেষজ্ঞ</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Footer with Timing -->
+                        <div class="doctor-card-footer bangla-text">
+                            <i class="far fa-clock me-2"></i>রোগী দেখার সময়:
+                            <div class="timing-badge">
+                                {% if 'বৃহস্পতিবার' in doctor.specialization %}
+                                    নিয়মিত প্রতি বৃহস্পতিবার সন্ধ্যা ৭টা হইতে রাত ৯টা পর্যন্ত
+                                {% elif 'আয়েশা' in doctor.first_name %}
+                                    প্রতিদিন বিকাল ৩টা থেকে রাত ৮টা পর্যন্ত
+                                {% else %}
+                                    প্রতিদিন সকাল ১০টা হইতে রাত ৬টা পর্যন্ত
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Book Appointment CTA -->
+            <div class="text-center mt-5">
+                <a href="{% url 'appointments:public_booking' %}" class="btn btn-book-appointment btn-lg">
+                    <i class="fas fa-calendar-check me-2"></i>
+                    <span class="bangla-text">এখনই সিরিয়াল বুক করুন</span> / Book Appointment Now
+                </a>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+    
+    <!-- Stats Section -->
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-box">
+                        <div class="stat-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="stat-number">{{ doctors_count }}+</div>
+                        <div class="stat-label bangla-text">অভিজ্ঞ ডাক্তার</div>
+                        <div class="stat-label"><small>Expert Doctors</small></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-box">
+                        <div class="stat-icon">
+                            <i class="fas fa-hospital-user"></i>
+                        </div>
+                        <div class="stat-number">5000+</div>
+                        <div class="stat-label bangla-text">সন্তুষ্ট রোগী</div>
+                        <div class="stat-label"><small>Happy Patients</small></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-box">
+                        <div class="stat-icon">
+                            <i class="fas fa-microscope"></i>
+                        </div>
+                        <div class="stat-number">100+</div>
+                        <div class="stat-label bangla-text">ল্যাব পরীক্ষা</div>
+                        <div class="stat-label"><small>Lab Tests</small></div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="stat-box">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-number">24/7</div>
+                        <div class="stat-label bangla-text">জরুরি সেবা</div>
+                        <div class="stat-label"><small>Emergency Service</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Contact Info Bar -->
+    <section id="contact" class="contact-info-bar">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6">
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <h5 class="bangla-text">ঠিকানা / Address</h5>
+                        <p class="bangla-text">
+                            সাদিয়া প্যালেস, বাজার রোড<br>
+                            নজিপুর সরদারপাড়া মোড়<br>
+                            নজিপুর পৌরসদ, পত্নীতলা, নওগাঁ<br>
+                            বাংলাদেশ
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="contact-item">
+                        <i class="fas fa-phone-alt"></i>
+                        <h5 class="bangla-text">যোগাযোগ / Contact</h5>
+                        <p class="bangla-text">
+                            <strong>মোবাইল:</strong> ০১৭৩২-৮৫৩৩০৩<br>
+                            <strong>Email:</strong> universalhealthbd@gmail.com
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6">
+                    <div class="contact-item">
+                        <i class="fas fa-clock"></i>
+                        <h5 class="bangla-text">সময় / Opening Hours</h5>
+                        <p class="bangla-text">
+                            <strong>সকাল ১০টা - রাত ৮টা পর্যন্ত</strong><br>
+                            (ডাক্তার অনুযায়ী সময় ভিন্ন হতে পারে)<br>
+                            <strong>জরুরি:</strong> ২৪ ঘন্টা খোলা
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="mb-3">
+                <h5 class="bangla-text">ইউনিভার্সাল হেলথ সার্ভিসেস এন্ড ডায়াগনস্টিক সেন্টার</h5>
+                <p>UNIVERSAL HEALTH SERVICES & DIAGNOSTIC CENTER</p>
+                <p class="bangla-text" style="font-size: 0.9rem;">
+                    সাদিয়া প্যালেস, বাজার রোড, নজিপুর সরদারপাড়া মোড়, নজিপুর পৌরসদ, পত্নীতলা, নওগাঁ
+                </p>
+                <p style="font-size: 0.9rem;">
+                    <i class="fas fa-phone-alt me-2"></i>০১৭৩২-৮৫৩৩০৩
+                </p>
+            </div>
+            <div class="footer-links mb-3">
+                <a href="#services" class="bangla-text">সেবা সমূহ</a>
+                <a href="#doctors" class="bangla-text">ডাক্তার</a>
+                <a href="#contact" class="bangla-text">যোগাযোগ</a>
+                <a href="{% url 'accounts:login' %}">Staff Login</a>
+            </div>
+            <p class="mb-0">
+                <small>&copy; 2025 Universal Health Services. All Rights Reserved.</small>
+            </p>
+            <p class="mt-2 mb-0">
+                <small class="bangla-text">
+                    <i class="fas fa-heart text-danger"></i> 
+                    সুস্বাস্থ্যই সকল সুখের মূল
+                </small>
+            </p>
+        </div>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Smooth Scroll -->
+    <script>
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Canteen Feedback - Survey{% endblock %}
+
+{% block extra_css %}
+<style>
+    .feedback-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .feedback-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        margin-top: 30px;
+    }
+    
+    .feedback-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 3px solid #f0f0f0;
+    }
+    
+    .feedback-header h2 {
+        color: #ff6b35;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+    
+    .rating-section {
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .rating-label {
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+        color: #333;
+    }
+    
+    .star-rating {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin: 15px 0;
+    }
+    
+    .star-rating input {
+        display: none;
+    }
+    
+    .star-rating label {
+        font-size: 2.5rem;
+        color: #ddd;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label {
+        color: #ffc107;
+        transform: scale(1.1);
+    }
+    
+    .emoji-rating {
+        display: flex;
+        justify-content: space-around;
+        margin: 20px 0;
+    }
+    
+    .emoji-option {
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        padding: 15px;
+        border-radius: 15px;
+    }
+    
+    .emoji-option:hover {
+        background-color: #e9ecef;
+        transform: scale(1.1);
+    }
+    
+    .emoji-option input {
+        display: none;
+    }
+    
+    .emoji-option input:checked + label {
+        background-color: #007bff;
+        color: white;
+        border-radius: 15px;
+        padding: 10px;
+    }
+    
+    .emoji-icon {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 10px;
+    }
+    
+    .emoji-text {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    
+    .food-item-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        margin-bottom: 10px;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .food-item-checkbox:hover {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    
+    .food-item-checkbox input:checked + label {
+        color: #007bff;
+        font-weight: bold;
+    }
+    
+    .submit-button {
+        background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+        border: none;
+        padding: 15px 50px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        border-radius: 30px;
+        color: white;
+        box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        transition: all 0.3s;
+    }
+    
+    .submit-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(255, 107, 53, 0.4);
+    }
+    
+    .thank-you-message {
+        text-align: center;
+        padding: 60px;
+        display: none;
+    }
+    
+    .thank-you-message.show {
+        display: block;
+    }
+    
+    .thank-you-icon {
+        font-size: 5rem;
+        color: #28a745;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="feedback-container">
+    <div class="feedback-card">
+        <!-- Feedback Form -->
+        <div id="feedbackForm">
+            <div class="feedback-header">
+                <h2><i class="fas fa-utensils"></i> Canteen Feedback</h2>
+                <p class="text-muted mb-0">We value your opinion! Help us improve our service.</p>
+            </div>
+
+            <form method="post" id="mainForm">
+                {% csrf_token %}
+                
+                <!-- Overall Rating -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-star text-warning"></i> Overall Experience
+                    </div>
+                    <div class="star-rating">
+                        <input type="radio" name="overall_rating" id="star5" value="5" required>
+                        <label for="star5">★</label>
+                        <input type="radio" name="overall_rating" id="star4" value="4">
+                        <label for="star4">★</label>
+                        <input type="radio" name="overall_rating" id="star3" value="3">
+                        <label for="star3">★</label>
+                        <input type="radio" name="overall_rating" id="star2" value="2">
+                        <label for="star2">★</label>
+                        <input type="radio" name="overall_rating" id="star1" value="1">
+                        <label for="star1">★</label>
+                    </div>
+                    <div class="text-center">
+                        <small class="text-muted">Click on stars to rate</small>
+                    </div>
+                </div>
+
+                <!-- Food Quality -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-hamburger text-danger"></i> Food Quality
+                    </div>
+                    <div class="emoji-rating">
+                        <div class="emoji-option">
+                            <input type="radio" name="food_quality" id="quality_excellent" value="5" required>
+                            <label for="quality_excellent">
+                                <span class="emoji-icon">😍</span>
+                                <span class="emoji-text">Excellent</span>
+                            </label>
+                        </div>
+                        <div class="emoji-option">
+                            <input type="radio" name="food_quality" id="quality_good" value="4">
+                            <label for="quality_good">
+                                <span class="emoji-icon">😊</span>
+                                <span class="emoji-text">Good</span>
+                            </label>
+                        </div>
+                        <div class="emoji-option">
+                            <input type="radio" name="food_quality" id="quality_average" value="3">
+                            <label for="quality_average">
+                                <span class="emoji-icon">😐</span>
+                                <span class="emoji-text">Average</span>
+                            </label>
+                        </div>
+                        <div class="emoji-option">
+                            <input type="radio" name="food_quality" id="quality_poor" value="2">
+                            <label for="quality_poor">
+                                <span class="emoji-icon">☹️</span>
+                                <span class="emoji-text">Poor</span>
+                            </label>
+                        </div>
+                        <div class="emoji-option">
+                            <input type="radio" name="food_quality" id="quality_bad" value="1">
+                            <label for="quality_bad">
+                                <span class="emoji-icon">😡</span>
+                                <span class="emoji-text">Bad</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Rating -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-concierge-bell text-primary"></i> Service Speed
+                    </div>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="service_speed" id="speed_fast" value="5" required>
+                        <label class="btn btn-outline-success" for="speed_fast">
+                            <i class="fas fa-bolt"></i> Very Fast
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="service_speed" id="speed_good" value="4">
+                        <label class="btn btn-outline-success" for="speed_good">
+                            <i class="fas fa-check"></i> Fast
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="service_speed" id="speed_average" value="3">
+                        <label class="btn btn-outline-warning" for="speed_average">
+                            <i class="fas fa-minus"></i> Average
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="service_speed" id="speed_slow" value="2">
+                        <label class="btn btn-outline-danger" for="speed_slow">
+                            <i class="fas fa-times"></i> Slow
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="service_speed" id="speed_veryslow" value="1">
+                        <label class="btn btn-outline-danger" for="speed_veryslow">
+                            <i class="fas fa-hourglass"></i> Too Slow
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Cleanliness -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-broom text-info"></i> Cleanliness & Hygiene
+                    </div>
+                    <div class="star-rating">
+                        <input type="radio" name="cleanliness" id="clean5" value="5" required>
+                        <label for="clean5">★</label>
+                        <input type="radio" name="cleanliness" id="clean4" value="4">
+                        <label for="clean4">★</label>
+                        <input type="radio" name="cleanliness" id="clean3" value="3">
+                        <label for="clean3">★</label>
+                        <input type="radio" name="cleanliness" id="clean2" value="2">
+                        <label for="clean2">★</label>
+                        <input type="radio" name="cleanliness" id="clean1" value="1">
+                        <label for="clean1">★</label>
+                    </div>
+                </div>
+
+                <!-- Value for Money -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-dollar-sign text-success"></i> Value for Money
+                    </div>
+                    <div class="row g-2">
+                        <div class="col">
+                            <input type="radio" class="btn-check" name="value_for_money" id="value5" value="5" required>
+                            <label class="btn btn-outline-success w-100" for="value5">Excellent</label>
+                        </div>
+                        <div class="col">
+                            <input type="radio" class="btn-check" name="value_for_money" id="value4" value="4">
+                            <label class="btn btn-outline-success w-100" for="value4">Good</label>
+                        </div>
+                        <div class="col">
+                            <input type="radio" class="btn-check" name="value_for_money" id="value3" value="3">
+                            <label class="btn btn-outline-warning w-100" for="value3">Fair</label>
+                        </div>
+                        <div class="col">
+                            <input type="radio" class="btn-check" name="value_for_money" id="value2" value="2">
+                            <label class="btn btn-outline-danger w-100" for="value2">Poor</label>
+                        </div>
+                        <div class="col">
+                            <input type="radio" class="btn-check" name="value_for_money" id="value1" value="1">
+                            <label class="btn btn-outline-danger w-100" for="value1">Bad</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorite Items -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-heart text-danger"></i> What did you order? (Optional)
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="food-item-checkbox">
+                                <input type="checkbox" name="ordered_items" id="item_rice" value="Rice Meals">
+                                <label for="item_rice" class="ms-2 mb-0">Rice Meals</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="food-item-checkbox">
+                                <input type="checkbox" name="ordered_items" id="item_snacks" value="Snacks">
+                                <label for="item_snacks" class="ms-2 mb-0">Snacks</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="food-item-checkbox">
+                                <input type="checkbox" name="ordered_items" id="item_beverages" value="Beverages">
+                                <label for="item_beverages" class="ms-2 mb-0">Beverages</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="food-item-checkbox">
+                                <input type="checkbox" name="ordered_items" id="item_desserts" value="Desserts">
+                                <label for="item_desserts" class="ms-2 mb-0">Desserts</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Written Feedback -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-comment-dots text-primary"></i> Additional Comments
+                    </div>
+                    <textarea name="comments" class="form-control" rows="5" 
+                              placeholder="Share your thoughts, suggestions, or any concerns..."></textarea>
+                    <small class="text-muted">Your feedback helps us improve!</small>
+                </div>
+
+                <!-- Contact Information (Optional) -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-user text-secondary"></i> Contact Information (Optional)
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <input type="text" name="name" class="form-control" placeholder="Your Name">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="email" name="email" class="form-control" placeholder="Your Email">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="tel" name="phone" class="form-control" placeholder="Phone Number">
+                        </div>
+                        <div class="col-md-6">
+                            <select name="customer_type" class="form-select">
+                                <option value="">I am a...</option>
+                                <option value="PATIENT">Patient</option>
+                                <option value="VISITOR">Visitor</option>
+                                <option value="STAFF">Staff Member</option>
+                                <option value="DOCTOR">Doctor</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Would Recommend -->
+                <div class="rating-section">
+                    <div class="rating-label">
+                        <i class="fas fa-thumbs-up text-success"></i> Would you recommend our canteen?
+                    </div>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="would_recommend" id="rec_yes" value="yes" required>
+                        <label class="btn btn-outline-success btn-lg" for="rec_yes">
+                            <i class="fas fa-thumbs-up"></i> Yes, Definitely
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="would_recommend" id="rec_maybe" value="maybe">
+                        <label class="btn btn-outline-warning btn-lg" for="rec_maybe">
+                            <i class="fas fa-meh"></i> Maybe
+                        </label>
+                        
+                        <input type="radio" class="btn-check" name="would_recommend" id="rec_no" value="no">
+                        <label class="btn btn-outline-danger btn-lg" for="rec_no">
+                            <i class="fas fa-thumbs-down"></i> No
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="text-center mt-4">
+                    <button type="submit" class="submit-button">
+                        <i class="fas fa-paper-plane"></i> Submit Feedback
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Thank You Message (Hidden Initially) -->
+        <div class="thank-you-message" id="thankYouMessage">
+            <div class="thank-you-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="text-success mb-3">Thank You!</h2>
+            <p class="lead">Your feedback has been submitted successfully.</p>
+            <p class="text-muted mb-4">We appreciate you taking the time to help us improve our service.</p>
+            <button class="btn btn-primary btn-lg" onclick="submitAnother()">
+                <i class="fas fa-redo"></i> Submit Another Feedback
+            </button>
+            <a href="{% url 'survey:canteen_menu' %}" class="btn btn-outline-secondary btn-lg ms-2">
+                <i class="fas fa-utensils"></i> Back to Menu
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Form submission
+    document.getElementById('mainForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Show loading
+        const submitBtn = document.querySelector('.submit-button');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Simulate submission (replace with actual AJAX call)
+        const formData = new FormData(this);
+        
+        fetch('{% url "survey:feedback_submit" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide form, show thank you
+            document.getElementById('feedbackForm').style.display = 'none';
+            document.getElementById('thankYouMessage').classList.add('show');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .catch(error => {
+            alert('Error submitting feedback. Please try again.');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+    
+    function submitAnother() {
+        document.getElementById('feedbackForm').style.display = 'block';
+        document.getElementById('thankYouMessage').classList.remove('show');
+        document.getElementById('mainForm').reset();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    
+    // Star rating interaction
+    document.querySelectorAll('.star-rating').forEach(ratingGroup => {
+        const stars = ratingGroup.querySelectorAll('label');
+        const inputs = ratingGroup.querySelectorAll('input');
+        
+        stars.forEach((star, index) => {
+            star.addEventListener('mouseenter', () => {
+                stars.forEach((s, i) => {
+                    if (i >= index) {
+                        s.style.color = '#ffc107';
+                    } else {
+                        s.style.color = '#ddd';
+                    }
+                });
+            });
+        });
+        
+        ratingGroup.addEventListener('mouseleave', () => {
+            const checkedIndex = Array.from(inputs).findIndex(input => input.checked);
+            stars.forEach((s, i) => {
+                if (checkedIndex >= 0 && i >= checkedIndex) {
+                    s.style.color = '#ffc107';
+                } else {
+                    s.style.color = '#ddd';
+                }
+            });
+        });
+    });
+    
+    // Emoji selection animation
+    document.querySelectorAll('.emoji-option').forEach(option => {
+        option.addEventListener('click', function() {
+            const input = this.querySelector('input');
+            input.checked = true;
+            
+            // Remove active class from siblings
+            this.parentElement.querySelectorAll('.emoji-option').forEach(opt => {
+                opt.style.backgroundColor = '';
+            });
+            
+            // Add active style
+            this.style.backgroundColor = '#e7f3ff';
+        });
+    });
+</script>
+{% endblock %}

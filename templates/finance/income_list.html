@@ -1,0 +1,532 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Income Records - Finance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .filter-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .stat-card {
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .income-table {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .income-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .amount-badge {
+        font-size: 1.1rem;
+        font-weight: bold;
+        padding: 8px 15px;
+    }
+    
+    .source-badge {
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+    }
+    
+    .payment-method-icon {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+    
+    .filter-section {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .quick-filter-btn {
+        margin: 5px;
+        border-radius: 20px;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="fas fa-hand-holding-usd text-success"></i> Income Records</h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Income Records</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'finance:income_create' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Add Income
+                    </a>
+                    <button class="btn btn-info" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="stat-card bg-success text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>Today's Income</h6>
+                        <h3 class="mb-0">৳{{ today_income|floatformat:2|default:"0.00" }}</h3>
+                        <small>{{ today_count|default:0 }} transactions</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-calendar-day fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>This Month</h6>
+                        <h3 class="mb-0">৳{{ month_income|floatformat:2|default:"0.00" }}</h3>
+                        <small>{{ month_count|default:0 }} transactions</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-calendar-alt fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>Total Revenue</h6>
+                        <h3 class="mb-0">৳{{ total_income|floatformat:2|default:"0.00" }}</h3>
+                        <small>All time</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-chart-line fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-warning text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6>Average Transaction</h6>
+                        <h3 class="mb-0">৳{{ avg_income|floatformat:2|default:"0.00" }}</h3>
+                        <small>Per transaction</small>
+                    </div>
+                    <div>
+                        <i class="fas fa-calculator fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart Section -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-chart-bar text-primary"></i> Income Trend (Last 7 Days)</h5>
+                <canvas id="incomeTrendChart" height="100"></canvas>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-chart-pie text-success"></i> Income by Source</h5>
+                <canvas id="incomeSourceChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-section">
+        <form method="get" id="filterForm" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Date From</label>
+                <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Date To</label>
+                <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Source</label>
+                <select name="source" class="form-select">
+                    <option value="">All Sources</option>
+                    <option value="CONSULTATION" {% if request.GET.source == 'CONSULTATION' %}selected{% endif %}>Consultation</option>
+                    <option value="LAB_TEST" {% if request.GET.source == 'LAB_TEST' %}selected{% endif %}>Lab Test</option>
+                    <option value="PHARMACY" {% if request.GET.source == 'PHARMACY' %}selected{% endif %}>Pharmacy</option>
+                    <option value="CANTEEN" {% if request.GET.source == 'CANTEEN' %}selected{% endif %}>Canteen</option>
+                    <option value="OTHER" {% if request.GET.source == 'OTHER' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Payment Method</label>
+                <select name="payment_method" class="form-select">
+                    <option value="">All Methods</option>
+                    <option value="CASH" {% if request.GET.payment_method == 'CASH' %}selected{% endif %}>Cash</option>
+                    <option value="CARD" {% if request.GET.payment_method == 'CARD' %}selected{% endif %}>Card</option>
+                    <option value="MOBILE" {% if request.GET.payment_method == 'MOBILE' %}selected{% endif %}>Mobile</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </form>
+        
+        <!-- Quick Filters -->
+        <div class="mt-3">
+            <strong>Quick Filters:</strong>
+            <button class="btn btn-sm btn-outline-primary quick-filter-btn" onclick="filterByDate('today')">Today</button>
+            <button class="btn btn-sm btn-outline-primary quick-filter-btn" onclick="filterByDate('yesterday')">Yesterday</button>
+            <button class="btn btn-sm btn-outline-primary quick-filter-btn" onclick="filterByDate('week')">This Week</button>
+            <button class="btn btn-sm btn-outline-primary quick-filter-btn" onclick="filterByDate('month')">This Month</button>
+            <button class="btn btn-sm btn-outline-secondary quick-filter-btn" onclick="clearFilters()">Clear All</button>
+        </div>
+    </div>
+
+    <!-- Income Table -->
+    <div class="income-table">
+        <div class="card">
+            <div class="card-header bg-gradient-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-list"></i> Income Transactions</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Income #</th>
+                                <th>Date</th>
+                                <th>Source</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Payment Method</th>
+                                <th>Amount</th>
+                                <th>Recorded By</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for income in income_list %}
+                            <tr class="income-row">
+                                <td>
+                                    <strong class="text-primary">{{ income.income_number }}</strong>
+                                    {% if income.reference_number %}
+                                    <br><small class="text-muted">Ref: {{ income.reference_number }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ income.date|date:"d M, Y" }}
+                                    <br><small class="text-muted">{{ income.recorded_at|date:"h:i A" }}</small>
+                                </td>
+                                <td>
+                                    <span class="source-badge 
+                                        {% if income.source == 'CONSULTATION' %}bg-info text-white
+                                        {% elif income.source == 'LAB_TEST' %}bg-success text-white
+                                        {% elif income.source == 'PHARMACY' %}bg-primary text-white
+                                        {% elif income.source == 'CANTEEN' %}bg-warning text-dark
+                                        {% else %}bg-secondary text-white{% endif %}">
+                                        {{ income.get_source_display }}
+                                    </span>
+                                </td>
+                                <td>{{ income.category.name|default:"N/A" }}</td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                          title="{{ income.description }}">
+                                        {{ income.description|truncatewords:10 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if income.payment_method == 'CASH' %}
+                                        <span class="payment-method-icon bg-success text-white">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </span> Cash
+                                    {% elif income.payment_method == 'CARD' %}
+                                        <span class="payment-method-icon bg-primary text-white">
+                                            <i class="fas fa-credit-card"></i>
+                                        </span> Card
+                                    {% elif income.payment_method == 'MOBILE' %}
+                                        <span class="payment-method-icon bg-info text-white">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </span> Mobile
+                                    {% else %}
+                                        <span class="text-muted">{{ income.payment_method|default:"N/A" }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge amount-badge bg-success">
+                                        ৳{{ income.amount|floatformat:2 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {{ income.recorded_by.get_full_name|default:"System" }}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" onclick="viewDetails({{ income.id }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="printReceipt({{ income.id }})">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                    {% if request.user.is_superuser %}
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteIncome({{ income.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="9" class="text-center py-5">
+                                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">No income records found</p>
+                                    <a href="{% url 'finance:income_create' %}" class="btn btn-primary">
+                                        <i class="fas fa-plus"></i> Add First Income Record
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        {% if income_list %}
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="6" class="text-end">Total (This Page):</th>
+                                <th>
+                                    <span class="badge bg-success amount-badge">
+                                        ৳{{ page_total|floatformat:2 }}
+                                    </span>
+                                </th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                        {% endif %}
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <div class="card-footer">
+                <nav>
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.date_from %}&date_from={{ request.GET.date_from }}{% endif %}{% if request.GET.date_to %}&date_to={{ request.GET.date_to }}{% endif %}{% if request.GET.source %}&source={{ request.GET.source }}{% endif %}">Last</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-info-circle"></i> Income Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Income Trend Chart
+    const trendCtx = document.getElementById('incomeTrendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Daily Income',
+                data: {{ chart_data|safe }},
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '৳' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Income Source Chart
+    const sourceCtx = document.getElementById('incomeSourceChart').getContext('2d');
+    new Chart(sourceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ source_labels|safe }},
+            datasets: [{
+                data: {{ source_data|safe }},
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(153, 102, 255, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true
+        }
+    });
+
+    // Quick date filters
+    function filterByDate(period) {
+        const today = new Date();
+        let dateFrom, dateTo;
+        
+        switch(period) {
+            case 'today':
+                dateFrom = dateTo = today.toISOString().split('T')[0];
+                break;
+            case 'yesterday':
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                dateFrom = dateTo = yesterday.toISOString().split('T')[0];
+                break;
+            case 'week':
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay());
+                dateFrom = weekStart.toISOString().split('T')[0];
+                dateTo = today.toISOString().split('T')[0];
+                break;
+            case 'month':
+                dateFrom = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+                dateTo = today.toISOString().split('T')[0];
+                break;
+        }
+        
+        document.querySelector('[name="date_from"]').value = dateFrom;
+        document.querySelector('[name="date_to"]').value = dateTo;
+        document.getElementById('filterForm').submit();
+    }
+
+    function clearFilters() {
+        window.location.href = window.location.pathname;
+    }
+
+    function viewDetails(id) {
+        fetch(`/finance/income/${id}/details/`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('modalBody').innerHTML = html;
+                new bootstrap.Modal(document.getElementById('detailsModal')).show();
+            });
+    }
+
+    function printReceipt(id) {
+        window.open(`/finance/income/${id}/receipt/`, '_blank');
+    }
+
+    function deleteIncome(id) {
+        if (confirm('Are you sure you want to delete this income record?')) {
+            fetch(`/finance/income/${id}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            }).then(() => location.reload());
+        }
+    }
+
+    function exportToExcel() {
+        const params = new URLSearchParams(window.location.search);
+        params.set('export', 'excel');
+        window.location.href = `${window.location.pathname}?${params.toString()}`;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard - Enhanced{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-speedometer2"></i> Admin Dashboard</h2>
+    <div class="d-flex gap-2">
+        <!-- Period Filter -->
+        <div class="btn-group" role="group">
+            <a href="?period=today" class="btn btn-sm {% if period == 'today' %}btn-primary{% else %}btn-outline-primary{% endif %}">Today</a>
+            <a href="?period=week" class="btn btn-sm {% if period == 'week' %}btn-primary{% else %}btn-outline-primary{% endif %}">Week</a>
+            <a href="?period=month" class="btn btn-sm {% if period == 'month' %}btn-primary{% else %}btn-outline-primary{% endif %}">Month</a>
+            <a href="?period=year" class="btn btn-sm {% if period == 'year' %}btn-primary{% else %}btn-outline-primary{% endif %}">Year</a>
+        </div>
+        <span class="text-muted align-self-center">{{ user.get_full_name }}</span>
+    </div>
+</div>
+
+<!-- System Alerts -->
+{% if system_alerts %}
+<div class="alert alert-info mb-4">
+    <h6><i class="bi bi-bell"></i> System Alerts</h6>
+    {% for alert in system_alerts %}
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <span>{{ alert.message }}</span>
+        {% if alert.action %}
+        <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <a href="{% url 'accounts:user_management' %}" class="btn btn-outline-success w-100 py-3">
+                    <i class="bi bi-people fs-2 d-block mb-2"></i>
+                    User Management
+                </a>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'accounts:system_settings' %}" class="btn btn-outline-info w-100 py-3">
+                    <i class="bi bi-gear fs-2 d-block mb-2"></i>
+                    System Settings
+                </a>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'accounts:activity_logs' %}" class="btn btn-outline-warning w-100 py-3">
+                    <i class="bi bi-clock-history fs-2 d-block mb-2"></i>
+                    Activity Logs
+                </a>
+            </div>
+            <div class="col-md-2">
+                <a href="#" class="btn btn-outline-primary w-100 py-3">
+                    <i class="bi bi-plus-circle fs-2 d-block mb-2"></i>
+                    Add Income
+                </a>
+            </div>
+            <div class="col-md-2">
+                <a href="#" class="btn btn-outline-danger w-100 py-3">
+                    <i class="bi bi-dash-circle fs-2 d-block mb-2"></i>
+                    Add Expense
+                </a>
+            </div>
+            <div class="col-md-2">
+                <a href="#" class="btn btn-outline-secondary w-100 py-3">
+                    <i class="bi bi-person-plus fs-2 d-block mb-2"></i>
+                    Add Investor
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-success">
+            <div class="card-body text-center">
+                <h4 class="text-success">₹{{ total_income|floatformat:0 }}</h4>
+                <p class="mb-1">Total Income</p>
+                <small class="text-muted">{{ period|title }} Period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-danger">
+            <div class="card-body text-center">
+                <h4 class="text-danger">₹{{ total_expenses|floatformat:0 }}</h4>
+                <p class="mb-1">Total Expenses</p>
+                <small class="text-muted">{{ period|title }} Period</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-primary">
+            <div class="card-body text-center">
+                <h4 class="text-{% if profit >= 0 %}success{% else %}danger{% endif %}">₹{{ profit|floatformat:0 }}</h4>
+                <p class="mb-1">Net Profit</p>
+                <small class="text-muted">{{ profit_margin|floatformat:1 }}% Margin</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-info">
+            <div class="card-body text-center">
+                <h4 class="text-info">{{ total_staff }}</h4>
+                <p class="mb-1">Total Staff</p>
+                <small class="text-muted">{{ doctors_count }} Doctors Active</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Performance -->
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Department Performance</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h5 class="text-primary">Appointments</h5>
+                    <h3>₹{{ appointment_income|floatformat:0 }}</h3>
+                    <p class="text-muted">{{ period_appointments }} appointments</p>
+                    <small>Avg: ₹{{ avg_appointment_fee|floatformat:0 }}</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h5 class="text-info">Laboratory</h5>
+                    <h3>₹{{ lab_income|floatformat:0 }}</h3>
+                    <p class="text-muted">{{ departments_performance.lab.orders }} orders</p>
+                    <small>Avg: ₹{{ avg_lab_order|floatformat:0 }}</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h5 class="text-warning">Pharmacy</h5>
+                    <h3>₹{{ pharmacy_income|floatformat:0 }}</h3>
+                    <p class="text-muted">{{ departments_performance.pharmacy.sales }} sales</p>
+                    <small>Avg: ₹{{ avg_pharmacy_sale|floatformat:0 }}</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <h5 class="text-success">Canteen</h5>
+                    <h3>₹{{ canteen_income|floatformat:0 }}</h3>
+                    <p class="text-muted">{{ departments_performance.canteen.orders }} orders</p>
+                    <small>Revenue stream</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Overview -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-people"></i> Staff Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h4 class="text-primary">{{ doctors_count }}</h4>
+                        <small>Doctors</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-success">{{ nurses_count }}</h4>
+                        <small>Nurses</small>
+                    </div>
+                    <div class="col-4">
+                        <h4 class="text-warning">{{ other_staff }}</h4>
+                        <small>Other Staff</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Outstanding Payments</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-danger">₹{{ outstanding_lab_payments|floatformat:0 }}</h4>
+                        <small>Lab Orders</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">₹{{ outstanding_pharmacy_payments|floatformat:0 }}</h4>
+                        <small>Pharmacy Sales</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Statistics -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-primary">
+            <div class="card-body text-center">
+                <h4 class="text-primary">{{ total_patients }}</h4>
+                <p class="mb-1">Total Patients</p>
+                <small class="text-muted">+{{ new_patients_period }} this {{ period }}</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-success">
+            <div class="card-body text-center">
+                <h4 class="text-success">{{ completed_appointments }}</h4>
+                <p class="mb-1">Completed Appointments</p>
+                <small class="text-muted">{{ period_appointments }} total appointments</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-info">
+            <div class="card-body text-center">
+                <h4 class="text-info">{{ active_investors }}</h4>
+                <p class="mb-1">Active Investors</p>
+                <small class="text-muted">₹{{ total_investment|floatformat:0 }} invested</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-up-circle"></i> Recent Income</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_income %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for income in recent_income %}
+                            <tr>
+                                <td>{{ income.description|truncatechars:30 }}</td>
+                                <td class="text-success">₹{{ income.amount }}</td>
+                                <td>{{ income.date|date:"M d" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No income recorded for this period</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-arrow-down-circle"></i> Recent Expenses</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_expenses %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in recent_expenses %}
+                            <tr>
+                                <td>{{ expense.description|truncatechars:30 }}</td>
+                                <td class="text-danger">₹{{ expense.amount }}</td>
+                                <td>{{ expense.date|date:"M d" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No expenses recorded for this period</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}Lab Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-heart-pulse"></i> Laboratory Dashboard</h2>
+    <span class="text-muted">{{ user.get_full_name }}</span>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning">{{ pending_orders }}</h3>
+                <p class="mb-0">Pending Orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-primary">
+            <div class="card-body text-center">
+                <h3 class="text-primary">{{ in_progress_orders }}</h3>
+                <p class="mb-0">In Progress</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-success">
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ today_completed }}</h3>
+                <p class="mb-0">Completed Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-info">
+            <div class="card-body text-center">
+                <h3 class="text-info">{{ samples_collected_today }}</h3>
+                <p class="mb-0">Samples Collected</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Urgent Orders Alert -->
+{% if urgent_orders %}
+<div class="alert alert-danger mb-4">
+    <h5><i class="bi bi-exclamation-triangle"></i> Urgent Orders</h5>
+    <div class="row">
+        {% for order in urgent_orders %}
+        <div class="col-md-6 mb-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <span><strong>{{ order.appointment.patient.get_full_name }}</strong> - {{ order.test.name }}</span>
+                <span class="badge bg-danger">URGENT</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Equipment Status -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-gear"></i> Equipment Status</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for equipment, status in equipment_status.items %}
+            <div class="col-md-3">
+                <div class="card border-{% if status.status == 'online' %}success{% elif status.status == 'maintenance' %}warning{% else %}danger{% endif %}">
+                    <div class="card-body text-center">
+                        <h6>{{ equipment|title|replace:"_":" " }}</h6>
+                        <span class="badge bg-{% if status.status == 'online' %}success{% elif status.status == 'maintenance' %}warning{% else %}danger{% endif %}">
+                            {{ status.status|title }}
+                        </span>
+                        <br><small class="text-muted">Last calibrated: {{ status.last_calibration }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Pending Lab Orders -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-hourglass-split"></i> Pending Lab Orders</h5>
+    </div>
+    <div class="card-body">
+        {% if pending_lab_orders %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Patient</th>
+                        <th>Tests</th>
+                        <th>Ordered By</th>
+                        <th>Ordered At</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in pending_lab_orders %}
+                    <tr>
+                        <td><strong>{{ order.order_number }}</strong></td>
+                        <td>{{ order.appointment.patient.get_full_name }}</td>
+                        <td>
+                            <span class="badge bg-info">{{ order.test.name }}</span>
+                        </td>
+                        <td>{{ order.appointment.doctor.get_full_name }}</td>
+                        <td>{{ order.ordered_at|date:"M d, g:i A" }}</td>
+                        <td>
+                            {% if order.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif order.status == 'sample_collected' %}
+                                <span class="badge bg-primary">Sample Collected</span>
+                            {% elif order.status == 'in_progress' %}
+                                <span class="badge bg-info">In Progress</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="updateStatus({{ order.pk }}, 'sample_collected')">
+                                    <i class="bi bi-droplet"></i> Sample
+                                </button>
+                                <button class="btn btn-outline-success" onclick="updateStatus({{ order.pk }}, 'in_progress')">
+                                    <i class="bi bi-play"></i> Start
+                                </button>
+                                <a href="{% url 'lab:laborder_detail' order.pk %}" class="btn btn-outline-info">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-check-circle display-1 text-success"></i>
+            <h4 class="mt-3">All Caught Up!</h4>
+            <p class="text-muted">No pending lab orders at the moment</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- In Progress Orders -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> In Progress</h5>
+    </div>
+    <div class="card-body">
+        {% if in_progress_lab_orders %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Patient</th>
+                        <th>Test</th>
+                        <th>Started At</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in in_progress_lab_orders %}
+                    <tr>
+                        <td><strong>{{ order.order_number }}</strong></td>
+                        <td>{{ order.appointment.patient.get_full_name }}</td>
+                        <td>{{ order.test.name }}</td>
+                        <td>{{ order.updated_at|date:"M d, g:i A" }}</td>
+                        <td>
+                            <a href="{% url 'lab:labresult_create' order.pk %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-file-text"></i> Enter Result
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-muted mb-0">No orders currently in progress</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function updateStatus(orderId, newStatus) {
+    if (confirm('Update order status to ' + newStatus + '?')) {
+        // AJAX call to update status
+        fetch(`/lab/orders/${orderId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating status: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

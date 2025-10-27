@@ -1,0 +1,589 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Laboratory{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lab-order-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .test-selection-card {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .test-selection-card:hover {
+        border-color: #0d6efd;
+        background-color: #e7f3ff;
+    }
+    
+    .test-selection-card.selected {
+        border-color: #0d6efd;
+        background-color: #cfe2ff;
+    }
+    
+    .test-category {
+        font-weight: bold;
+        color: #0d6efd;
+        font-size: 14pt;
+        margin-top: 15px;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #0d6efd;
+        padding-bottom: 5px;
+    }
+    
+    .test-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        background: white;
+    }
+    
+    .test-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .test-item.selected {
+        background-color: #d1e7dd;
+        border-color: #198754;
+    }
+    
+    .total-cost-display {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #0d6efd;
+        padding: 20px;
+        background: linear-gradient(135deg, #cfe2ff 0%, #b6d4fe 100%);
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .urgency-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+    }
+    
+    .urgency-normal {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .urgency-urgent {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .urgency-stat {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-vial text-info"></i> {{ title }}
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'receptionist_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'lab:order_list' %}">Lab Orders</a></li>
+                            <li class="breadcrumb-item active">{{ title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'lab:order_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="labOrderForm">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-lg-8">
+                <div class="card lab-order-card">
+                    <div class="card-body">
+                        <!-- Total Cost Display -->
+                        <div class="total-cost-display">
+                            Total Cost: ৳ <span id="totalCost">0.00</span>
+                        </div>
+
+                        <!-- Patient Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-user-injured text-primary"></i> Patient Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-8 mb-3">
+                                    <label for="{{ form.patient.id_for_label }}" class="form-label required-field">
+                                        Select Patient
+                                    </label>
+                                    {{ form.patient }}
+                                    {% if form.patient.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.patient.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">&nbsp;</label>
+                                    <a href="{% url 'patients:register' %}" class="btn btn-success w-100">
+                                        <i class="fas fa-user-plus"></i> Register New Patient
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Patient Details Display (populated via AJAX) -->
+                            <div id="patientDetails" class="alert alert-info" style="display: none;">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Age:</strong> <span id="patientAge"></span><br>
+                                        <strong>Gender:</strong> <span id="patientGender"></span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Phone:</strong> <span id="patientPhone"></span><br>
+                                        <strong>Blood Group:</strong> <span id="patientBlood"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.doctor.id_for_label }}" class="form-label">
+                                        Referred By (Doctor)
+                                    </label>
+                                    {{ form.doctor }}
+                                    {% if form.doctor.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.doctor.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.appointment.id_for_label }}" class="form-label">
+                                        Related Appointment
+                                    </label>
+                                    {{ form.appointment }}
+                                    {% if form.appointment.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.appointment.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Test Selection -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-flask text-success"></i> Select Tests
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <input type="text" id="testSearch" class="form-control" 
+                                       placeholder="🔍 Search tests by name...">
+                            </div>
+
+                            <div id="testsList">
+                                <!-- Test categories and items will be rendered here -->
+                                {% for category, tests in tests_by_category.items %}
+                                <div class="test-category">
+                                    <i class="fas fa-folder-open"></i> {{ category }}
+                                </div>
+                                {% for test in tests %}
+                                <div class="test-item" data-test-id="{{ test.id }}" 
+                                     data-test-price="{{ test.price }}" 
+                                     data-test-name="{{ test.name }}">
+                                    <div class="form-check">
+                                        <input class="form-check-input test-checkbox" type="checkbox" 
+                                               name="tests[]" value="{{ test.id }}" id="test{{ test.id }}">
+                                        <label class="form-check-label" for="test{{ test.id }}">
+                                            <strong>{{ test.name }}</strong>
+                                            <br><small class="text-muted">{{ test.description }}</small>
+                                            {% if test.preparation_required %}
+                                            <br><small class="text-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> 
+                                                {{ test.preparation_instructions }}
+                                            </small>
+                                            {% endif %}
+                                        </label>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-primary">৳ {{ test.price }}</strong>
+                                        <br><small class="text-muted">{{ test.duration }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                {% endfor %}
+                            </div>
+
+                            <!-- Selected Tests Summary -->
+                            <div id="selectedTestsSummary" style="display: none;" class="mt-3 p-3 bg-light border rounded">
+                                <h6><i class="fas fa-check-circle text-success"></i> Selected Tests:</h6>
+                                <div id="selectedTestsList"></div>
+                            </div>
+                        </div>
+
+                        <!-- Order Details -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-info-circle text-warning"></i> Order Details
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.urgency.id_for_label }}" class="form-label required-field">
+                                        Urgency
+                                    </label>
+                                    {{ form.urgency }}
+                                    {% if form.urgency.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.urgency.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.collection_date.id_for_label }}" class="form-label required-field">
+                                        Sample Collection Date
+                                    </label>
+                                    {{ form.collection_date }}
+                                    {% if form.collection_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.collection_date.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.collection_time.id_for_label }}" class="form-label required-field">
+                                        Collection Time
+                                    </label>
+                                    {{ form.collection_time }}
+                                    {% if form.collection_time.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.collection_time.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.clinical_notes.id_for_label }}" class="form-label">
+                                    Clinical Notes/Symptoms
+                                </label>
+                                {{ form.clinical_notes }}
+                                <small class="form-text text-muted">
+                                    Relevant clinical information that may help in test interpretation
+                                </small>
+                                {% if form.clinical_notes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.clinical_notes.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.special_instructions.id_for_label }}" class="form-label">
+                                    Special Instructions
+                                </label>
+                                {{ form.special_instructions }}
+                                {% if form.special_instructions.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.special_instructions.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Payment Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-credit-card text-info"></i> Payment Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.payment_status.id_for_label }}" class="form-label required-field">
+                                        Payment Status
+                                    </label>
+                                    {{ form.payment_status }}
+                                    {% if form.payment_status.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.payment_status.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.payment_method.id_for_label }}" class="form-label">
+                                        Payment Method
+                                    </label>
+                                    {{ form.payment_method }}
+                                    {% if form.payment_method.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.payment_method.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label for="{{ form.discount.id_for_label }}" class="form-label">
+                                        Discount (%)
+                                    </label>
+                                    {{ form.discount }}
+                                    {% if form.discount.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.discount.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'lab:order_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" name="action" value="save_draft" class="btn btn-warning">
+                                <i class="fas fa-save"></i> Save as Draft
+                            </button>
+                            <button type="submit" name="action" value="save" class="btn btn-success">
+                                <i class="fas fa-check"></i> Create Order
+                            </button>
+                            <button type="submit" name="action" value="save_and_print" class="btn btn-primary">
+                                <i class="fas fa-print"></i> Create & Print Receipt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Stats -->
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar"></i> Today's Lab Activity
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Orders Received:</span>
+                            <strong>{{ today_orders|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Samples Collected:</span>
+                            <strong class="text-success">{{ today_collected|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Results Pending:</span>
+                            <strong class="text-warning">{{ today_pending|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Completed:</span>
+                            <strong class="text-primary">{{ today_completed|default:"0" }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Test Packages -->
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-box-open"></i> Popular Test Packages
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for package in test_packages %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ package.name }}</strong>
+                                        <br><small class="text-muted">{{ package.tests_count }} tests</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-success">৳ {{ package.price }}</strong>
+                                        <br>
+                                        <button type="button" class="btn btn-sm btn-outline-success" 
+                                                onclick="selectPackage({{ package.id }})">
+                                            Select
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center text-muted">
+                                No packages available
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sample Collection Instructions -->
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle"></i> Important Notes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+                            <li class="mb-2">Ensure patient fasting requirements are met</li>
+                            <li class="mb-2">Verify patient identity before sample collection</li>
+                            <li class="mb-2">Label all samples immediately after collection</li>
+                            <li class="mb-2">Note any special handling requirements</li>
+                            <li>Document collection time accurately</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calculate total cost
+    function calculateTotal() {
+        let total = 0;
+        let selectedTests = [];
+        
+        document.querySelectorAll('.test-checkbox:checked').forEach(checkbox => {
+            const testItem = checkbox.closest('.test-item');
+            const price = parseFloat(testItem.dataset.testPrice);
+            const name = testItem.dataset.testName;
+            
+            total += price;
+            selectedTests.push(name);
+            
+            // Visual feedback
+            testItem.classList.add('selected');
+        });
+        
+        // Remove selected class from unchecked
+        document.querySelectorAll('.test-checkbox:not(:checked)').forEach(checkbox => {
+            checkbox.closest('.test-item').classList.remove('selected');
+        });
+        
+        // Apply discount
+        const discountPercent = parseFloat(document.getElementById('{{ form.discount.id_for_label }}').value) || 0;
+        const discountAmount = (total * discountPercent) / 100;
+        const finalTotal = total - discountAmount;
+        
+        document.getElementById('totalCost').textContent = finalTotal.toFixed(2);
+        
+        // Show/hide selected tests summary
+        const summaryDiv = document.getElementById('selectedTestsSummary');
+        const summaryList = document.getElementById('selectedTestsList');
+        
+        if (selectedTests.length > 0) {
+            summaryDiv.style.display = 'block';
+            summaryList.innerHTML = selectedTests.map(test => 
+                `<span class="badge bg-primary me-2 mb-2">${test}</span>`
+            ).join('');
+        } else {
+            summaryDiv.style.display = 'none';
+        }
+    }
+    
+    // Test search
+    document.getElementById('testSearch').addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        document.querySelectorAll('.test-item').forEach(item => {
+            const testName = item.dataset.testName.toLowerCase();
+            if (testName.includes(searchTerm)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach change listeners to all checkboxes
+        document.querySelectorAll('.test-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', calculateTotal);
+        });
+        
+        // Discount input listener
+        document.getElementById('{{ form.discount.id_for_label }}').addEventListener('input', calculateTotal);
+        
+        // Initial calculation
+        calculateTotal();
+        
+        // Set minimum date to today
+        const collectionDateInput = document.getElementById('{{ form.collection_date.id_for_label }}');
+        if (collectionDateInput) {
+            const today = new Date().toISOString().split('T')[0];
+            collectionDateInput.setAttribute('min', today);
+        }
+    });
+    
+    // Select package
+    function selectPackage(packageId) {
+        // This would need AJAX to fetch package tests
+        alert('Package selection feature will load all tests in this package');
+    }
+    
+    // Form validation
+    document.getElementById('labOrderForm').addEventListener('submit', function(e) {
+        const selectedTests = document.querySelectorAll('.test-checkbox:checked');
+        
+        if (selectedTests.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one test');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

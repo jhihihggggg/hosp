@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice #{{ invoice.invoice_number }} - Print</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .page-break {
+                page-break-after: always;
+            }
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+        }
+        
+        .invoice-header {
+            border-bottom: 3px solid #0d6efd;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .clinic-info {
+            text-align: center;
+        }
+        
+        .clinic-info h1 {
+            color: #0d6efd;
+            font-size: 28pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .clinic-info p {
+            margin: 2px 0;
+            color: #666;
+        }
+        
+        .invoice-title {
+            text-align: center;
+            background-color: #0d6efd;
+            color: white;
+            padding: 10px;
+            margin: 20px 0;
+            font-size: 18pt;
+            font-weight: bold;
+        }
+        
+        .info-section {
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+        }
+        
+        .info-box h5 {
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        .items-table thead {
+            background-color: #0d6efd;
+            color: white;
+        }
+        
+        .items-table th,
+        .items-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #dee2e6;
+        }
+        
+        .items-table th {
+            font-weight: bold;
+            font-size: 11pt;
+        }
+        
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .items-table .text-end {
+            text-align: right;
+        }
+        
+        .items-table .text-center {
+            text-align: center;
+        }
+        
+        .totals-section {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .totals-table {
+            width: 300px;
+            border: 2px solid #0d6efd;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .totals-table tr {
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .totals-table td {
+            padding: 10px 15px;
+        }
+        
+        .totals-table .label {
+            font-weight: bold;
+            color: #333;
+            width: 60%;
+        }
+        
+        .totals-table .amount {
+            text-align: right;
+            width: 40%;
+        }
+        
+        .totals-table .total-row {
+            background-color: #0d6efd;
+            color: white;
+            font-weight: bold;
+            font-size: 14pt;
+        }
+        
+        .discount-row {
+            color: #dc3545;
+        }
+        
+        .tax-row {
+            color: #0dcaf0;
+        }
+        
+        .notes-section {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 5px;
+        }
+        
+        .notes-section h6 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .terms-section {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 10pt;
+        }
+        
+        .terms-section h6 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .signature-section {
+            margin-top: 50px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .signature-box {
+            width: 200px;
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-top: 2px solid #333;
+            margin-top: 60px;
+            padding-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 10pt;
+            border-top: 2px solid #dee2e6;
+            padding-top: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+        
+        .status-paid {
+            background-color: #d1e7dd;
+            color: #0a3622;
+            border: 2px solid #0a3622;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 2px solid #856404;
+        }
+        
+        .status-overdue {
+            background-color: #f8d7da;
+            color: #842029;
+            border: 2px solid #842029;
+        }
+        
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 100pt;
+            color: rgba(13, 110, 253, 0.1);
+            z-index: -1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Watermark (if draft) -->
+    {% if invoice.status == 'draft' %}
+    <div class="watermark">DRAFT</div>
+    {% endif %}
+
+    <div class="invoice-container">
+        <!-- Print Controls -->
+        <div class="no-print text-center mb-3">
+            <button onclick="window.print()" class="btn btn-primary btn-lg">
+                <i class="fas fa-print"></i> Print Invoice
+            </button>
+            <button onclick="window.close()" class="btn btn-secondary btn-lg ms-2">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+
+        <!-- Invoice Header -->
+        <div class="invoice-header">
+            <div class="clinic-info">
+                <h1>{{ clinic_name|default:"Diagnostic Center" }}</h1>
+                <p>{{ clinic_address|default:"123 Medical Street, Dhaka, Bangladesh" }}</p>
+                <p>Phone: {{ clinic_phone|default:"+880 1234-567890" }} | Email: {{ clinic_email|default:"info@diagnosticcenter.com" }}</p>
+                <p>Reg. No: {{ clinic_reg|default:"DC-2024-001" }}</p>
+            </div>
+        </div>
+
+        <!-- Invoice Title -->
+        <div class="invoice-title">
+            INVOICE
+        </div>
+
+        <!-- Invoice & Customer Information -->
+        <div class="row info-section">
+            <div class="col-6">
+                <div class="info-box">
+                    <h5>Invoice Details</h5>
+                    <div class="info-row">
+                        <span class="info-label">Invoice Number:</span>
+                        <span>{{ invoice.invoice_number }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Invoice Date:</span>
+                        <span>{{ invoice.invoice_date|date:"d M, Y" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Due Date:</span>
+                        <span>{{ invoice.due_date|date:"d M, Y"|default:"N/A" }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="status-badge status-{{ invoice.status }}">
+                            {{ invoice.get_status_display|upper }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="info-box">
+                    <h5>Bill To</h5>
+                    <div class="info-row">
+                        <span class="info-label">Name:</span>
+                        <span>{{ invoice.customer_name }}</span>
+                    </div>
+                    {% if invoice.customer_phone %}
+                    <div class="info-row">
+                        <span class="info-label">Phone:</span>
+                        <span>{{ invoice.customer_phone }}</span>
+                    </div>
+                    {% endif %}
+                    {% if invoice.customer_email %}
+                    <div class="info-row">
+                        <span class="info-label">Email:</span>
+                        <span>{{ invoice.customer_email }}</span>
+                    </div>
+                    {% endif %}
+                    {% if invoice.customer_address %}
+                    <div class="info-row">
+                        <span class="info-label">Address:</span>
+                        <span>{{ invoice.customer_address }}</span>
+                    </div>
+                    {% endif %}
+                    {% if invoice.patient %}
+                    <div class="info-row">
+                        <span class="info-label">Patient ID:</span>
+                        <span>{{ invoice.patient.patient_id }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 45%;">Description</th>
+                    <th class="text-center" style="width: 12%;">Quantity</th>
+                    <th class="text-end" style="width: 18%;">Unit Price</th>
+                    <th class="text-end" style="width: 20%;">Amount (৳)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.items.all %}
+                <tr>
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>{{ item.description }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-end">৳ {{ item.unit_price|floatformat:2 }}</td>
+                    <td class="text-end">৳ {{ item.total_price|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Totals Section -->
+        <div class="totals-section">
+            <table class="totals-table">
+                <tr>
+                    <td class="label">Subtotal:</td>
+                    <td class="amount">৳ {{ invoice.subtotal|floatformat:2 }}</td>
+                </tr>
+                {% if invoice.discount > 0 %}
+                <tr class="discount-row">
+                    <td class="label">Discount ({{ invoice.discount }}%):</td>
+                    <td class="amount">- ৳ {{ invoice.discount_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                {% if invoice.tax > 0 %}
+                <tr class="tax-row">
+                    <td class="label">Tax ({{ invoice.tax }}%):</td>
+                    <td class="amount">৳ {{ invoice.tax_amount|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+                <tr class="total-row">
+                    <td class="label">Total Amount:</td>
+                    <td class="amount">৳ {{ invoice.total_amount|floatformat:2 }}</td>
+                </tr>
+                {% if invoice.amount_paid > 0 %}
+                <tr>
+                    <td class="label">Amount Paid:</td>
+                    <td class="amount">৳ {{ invoice.amount_paid|floatformat:2 }}</td>
+                </tr>
+                <tr>
+                    <td class="label">Balance Due:</td>
+                    <td class="amount">৳ {{ invoice.balance_due|floatformat:2 }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+
+        <!-- Amount in Words -->
+        <div class="mt-3 text-end">
+            <strong>Amount in Words:</strong> {{ invoice.amount_in_words|default:"N/A" }}
+        </div>
+
+        <!-- Notes Section -->
+        {% if invoice.notes %}
+        <div class="notes-section">
+            <h6><i class="fas fa-sticky-note"></i> Notes:</h6>
+            <p class="mb-0">{{ invoice.notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Terms & Conditions -->
+        {% if invoice.terms %}
+        <div class="terms-section">
+            <h6><i class="fas fa-file-contract"></i> Terms & Conditions:</h6>
+            <p class="mb-0">{{ invoice.terms }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Default Terms if not specified -->
+        {% if not invoice.terms %}
+        <div class="terms-section">
+            <h6><i class="fas fa-file-contract"></i> Terms & Conditions:</h6>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li>Payment is due within 7 days of invoice date</li>
+                <li>Please include invoice number in your payment reference</li>
+                <li>Late payments may incur additional charges</li>
+                <li>For any queries, please contact our accounts department</li>
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Payment Information -->
+        {% if invoice.payment_method %}
+        <div class="mt-3 p-3" style="background-color: #e7f3ff; border-left: 4px solid #0d6efd; border-radius: 5px;">
+            <strong>Payment Method:</strong> {{ invoice.get_payment_method_display }}
+            {% if invoice.payment_reference %}
+            <br><strong>Payment Reference:</strong> {{ invoice.payment_reference }}
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line">
+                    <strong>Customer Signature</strong>
+                </div>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    <strong>Authorized Signature</strong>
+                    <div style="margin-top: 5px; font-size: 10pt;">
+                        {{ invoice.created_by.get_full_name|default:"Admin" }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p class="mb-1">Thank you for your business!</p>
+            <p class="mb-0">This is a computer-generated invoice and does not require a physical signature.</p>
+            <p class="mb-0" style="font-size: 9pt; margin-top: 10px;">
+                Printed on: {{ now|date:"d M, Y h:i A" }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Auto-print script (uncomment if needed) -->
+    <!-- <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script> -->
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Prescriptions - Pharmacy{% endblock %}
+
+{% block extra_css %}
+<style>
+.pres-card{border-radius:12px;padding:15px;margin-bottom:10px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row mb-3">
+    <div class="col-8">
+      <h3>Prescriptions</h3>
+    </div>
+    <div class="col-4 text-end">
+      <a href="{% url 'pharmacy:prescription_create' %}" class="btn btn-primary">New Prescription</a>
+    </div>
+  </div>
+
+  <div class="row">
+    {% for p in prescriptions %}
+    <div class="col-md-6">
+      <div class="card pres-card">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <strong>{{ p.prescription_number }}</strong><br>
+            <small class="text-muted">{{ p.patient.full_name }} - {{ p.created_at|date:'d M, Y' }}</small>
+          </div>
+          <div>
+            <a href="{% url 'pharmacy:prescription_detail' p.id %}" class="btn btn-sm btn-outline-info">View</a>
+            <a href="{% url 'pharmacy:prescription_print' p.id %}" class="btn btn-sm btn-outline-primary">Print</a>
+            <button class="btn btn-sm btn-success" onclick="dispense({{ p.id }})">Dispense</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">No prescriptions found</div>
+    {% endfor %}
+  </div>
+
+  {% if is_paginated %}
+  <div class="row mt-3"><div class="col-12">{{ page_obj.paginator }}</div></div>
+  {% endif %}
+</div>
+
+<script>
+function dispense(id){
+  if(confirm('Mark prescription as dispensed?')){
+    fetch(`/pharmacy/prescription/${id}/dispense/`,{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(()=>location.reload())
+  }
+}
+</script>
+{% endblock %}

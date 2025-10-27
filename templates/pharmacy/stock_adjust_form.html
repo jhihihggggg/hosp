@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stock Adjustment - Pharmacy{% endblock %}
+
+{% block extra_css %}
+<style>
+.adjust-form{max-width:600px;margin:0 auto;padding:30px;background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="adjust-form">
+    <h3 class="mb-4">Stock Adjustment</h3>
+    
+    <form method="post">{% csrf_token %}
+      <div class="mb-3">
+        <label>Drug</label>
+        <select name="drug_id" class="form-select" required>
+          <option value="">Select drug...</option>
+          {% for drug in drugs %}
+          <option value="{{ drug.id }}">{{ drug.brand_name }} (Current: {{ drug.quantity_in_stock }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="mb-3">
+        <label>Adjustment Type</label>
+        <select name="adjust_type" class="form-select" required>
+          <option value="PURCHASE">Purchase (Add Stock)</option>
+          <option value="RETURN">Return to Supplier</option>
+          <option value="EXPIRED">Expired Items</option>
+          <option value="DAMAGED">Damaged Items</option>
+          <option value="CORRECTION">Stock Correction</option>
+        </select>
+      </div>
+      
+      <div class="mb-3">
+        <label>Quantity</label>
+        <input type="number" name="quantity" class="form-control" required min="1">
+        <small class="text-muted">Enter positive number (system handles +/- based on type)</small>
+      </div>
+      
+      <div class="mb-3">
+        <label>Reason</label>
+        <textarea name="reason" class="form-control" rows="3" required></textarea>
+      </div>
+      
+      <div class="d-grid gap-2">
+        <button type="submit" class="btn btn-primary">Submit Adjustment</button>
+        <a href="{% url 'pharmacy:stock_adjust_history' %}" class="btn btn-outline-secondary">View History</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

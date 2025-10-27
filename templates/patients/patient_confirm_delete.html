@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Patient - {{ patient.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirm Deletion</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5><i class="bi bi-exclamation-circle"></i> Warning!</h5>
+                    <p class="mb-0">You are about to permanently delete this patient record. This action cannot be undone.</p>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5>{{ patient.get_full_name }}</h5>
+                        <p class="mb-1"><strong>Patient ID:</strong> {{ patient.patient_id }}</p>
+                        <p class="mb-1"><strong>Age/Gender:</strong> {{ patient.age }} years, {{ patient.get_gender_display }}</p>
+                        <p class="mb-1"><strong>Phone:</strong> {{ patient.phone }}</p>
+                        <p class="mb-0"><strong>Registered:</strong> {{ patient.registered_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+                
+                {% if patient.appointments.count > 0 %}
+                <div class="alert alert-warning">
+                    <strong><i class="bi bi-info-circle"></i> Related Records:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>{{ patient.appointments.count }} appointment(s) will be deleted</li>
+                        {% if patient.laborders.count > 0 %}
+                        <li>{{ patient.laborders.count }} lab order(s) will be deleted</li>
+                        {% endif %}
+                        {% if patient.pharmacysales.count > 0 %}
+                        <li>{{ patient.pharmacysales.count }} pharmacy sale(s) will be deleted</li>
+                        {% endif %}
+                    </ul>
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <p class="fw-bold">Type <code>DELETE</code> to confirm:</p>
+                        <input type="text" class="form-control" id="confirmText" required pattern="DELETE">
+                        <small class="form-text text-muted">This is a safety measure to prevent accidental deletion.</small>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger flex-fill" id="deleteBtn" disabled>
+                            <i class="bi bi-trash"></i> Yes, Delete Permanently
+                        </button>
+                        <a href="{% url 'patients:patient_detail' patient.pk %}" class="btn btn-secondary flex-fill">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('confirmText').addEventListener('input', function() {
+    const deleteBtn = document.getElementById('deleteBtn');
+    if (this.value === 'DELETE') {
+        deleteBtn.disabled = false;
+    } else {
+        deleteBtn.disabled = true;
+    }
+});
+</script>
+{% endblock %}

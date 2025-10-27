@@ -1,0 +1,563 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Pharmacy{% endblock %}
+
+{% block extra_css %}
+<style>
+    .pharmacy-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .prescription-preview {
+        background: white;
+        border: 2px solid #0d6efd;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .medicine-row {
+        background-color: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .medicine-row:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .medicine-row.out-of-stock {
+        background-color: #f8d7da;
+        border-color: #dc3545;
+    }
+    
+    .medicine-row.low-stock {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+    }
+    
+    .stock-badge {
+        font-weight: bold;
+        padding: 5px 10px;
+        border-radius: 15px;
+    }
+    
+    .stock-available {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .stock-low {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .stock-out {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .total-display {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #198754;
+        padding: 20px;
+        background: linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%);
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .alternative-medicine {
+        background-color: #e7f3ff;
+        border-left: 4px solid #0d6efd;
+        padding: 10px;
+        margin-top: 5px;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-prescription text-success"></i> {{ title }}
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'pharmacy_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'pharmacy:pending_prescriptions' %}">Pending Prescriptions</a></li>
+                            <li class="breadcrumb-item active">{{ title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'pharmacy:pending_prescriptions' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="prescriptionProcessForm">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-lg-8">
+                <!-- Prescription Details -->
+                <div class="card pharmacy-card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-medical"></i> Prescription Details
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="prescription-preview">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Prescription ID:</strong> {{ prescription.prescription_number }}<br>
+                                    <strong>Date:</strong> {{ prescription.created_at|date:"d M, Y" }}<br>
+                                    <strong>Doctor:</strong> {{ prescription.doctor.get_full_name }}
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <strong>Patient:</strong> {{ prescription.patient.full_name }}<br>
+                                    <strong>Age/Gender:</strong> {{ prescription.patient.age }} / {{ prescription.patient.get_gender_display }}<br>
+                                    <strong>Phone:</strong> {{ prescription.patient.phone }}
+                                </div>
+                            </div>
+                            
+                            {% if prescription.diagnosis %}
+                            <div class="alert alert-info mb-3">
+                                <strong><i class="fas fa-stethoscope"></i> Diagnosis:</strong> {{ prescription.diagnosis }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if prescription.patient.allergies %}
+                            <div class="alert alert-danger">
+                                <strong><i class="fas fa-exclamation-triangle"></i> ALLERGIES:</strong> {{ prescription.patient.allergies }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medicine Processing -->
+                <div class="card pharmacy-card">
+                    <div class="card-body">
+                        <!-- Total Display -->
+                        <div class="total-display">
+                            Total: ৳ <span id="totalAmount">0.00</span>
+                        </div>
+
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-pills text-success"></i> Dispense Medicines
+                            </h5>
+                            
+                            <div id="medicinesContainer">
+                                {% for medicine in prescription.medicines.all %}
+                                <div class="medicine-row {% if medicine.stock == 0 %}out-of-stock{% elif medicine.stock < 10 %}low-stock{% endif %}" 
+                                     data-medicine-id="{{ medicine.id }}"
+                                     data-medicine-price="{{ medicine.sale_price }}">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-1">
+                                            <div class="form-check">
+                                                <input class="form-check-input medicine-checkbox" type="checkbox" 
+                                                       name="dispense_medicine[]" value="{{ medicine.id }}" 
+                                                       id="med{{ medicine.id }}"
+                                                       {% if medicine.stock == 0 %}disabled{% endif %}>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label for="med{{ medicine.id }}" style="cursor: pointer;">
+                                                <strong>{{ medicine.medicine_name }}</strong><br>
+                                                <small class="text-muted">{{ medicine.generic_name }}</small><br>
+                                                <small class="text-primary">{{ medicine.dosage }}</small>
+                                            </label>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small">Prescribed Qty</label>
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   value="{{ medicine.quantity }}" readonly>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label small">Dispense Qty</label>
+                                            <input type="number" name="quantity[]" 
+                                                   class="form-control form-control-sm quantity-input" 
+                                                   min="0" max="{{ medicine.stock }}" 
+                                                   value="{{ medicine.quantity }}"
+                                                   data-medicine-id="{{ medicine.id }}"
+                                                   {% if medicine.stock == 0 %}disabled{% endif %}>
+                                            <small class="text-muted">Max: {{ medicine.stock }}</small>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <strong class="text-success">৳ {{ medicine.sale_price }}</strong><br>
+                                            <span class="stock-badge stock-{% if medicine.stock == 0 %}out{% elif medicine.stock < 10 %}low{% else %}available{% endif %}">
+                                                Stock: {{ medicine.stock }}
+                                            </span>
+                                            {% if medicine.stock == 0 %}
+                                            <br><button type="button" class="btn btn-sm btn-outline-primary mt-1" 
+                                                        onclick="showAlternatives({{ medicine.id }})">
+                                                Find Alternative
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Medicine Instructions -->
+                                    <div class="mt-2 p-2" style="background-color: #f0f0f0; border-radius: 5px; font-size: 0.9em;">
+                                        <strong>Instructions:</strong> {{ medicine.instructions }}
+                                        {% if medicine.duration %}
+                                        <br><strong>Duration:</strong> {{ medicine.duration }}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Alternative Medicine Suggestions (if out of stock) -->
+                                    <div id="alternatives{{ medicine.id }}" class="alternative-medicine" style="display: none;">
+                                        <strong><i class="fas fa-exchange-alt"></i> Available Alternatives:</strong>
+                                        <div class="mt-2">
+                                            <!-- Alternatives will be loaded via AJAX -->
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Payment & Discount -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-calculator text-info"></i> Payment Calculation
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="calculation-table p-3" style="background-color: white; border: 1px solid #dee2e6; border-radius: 8px;">
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Subtotal:</span>
+                                            <strong>৳ <span id="subtotal">0.00</span></strong>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between mb-2 align-items-center">
+                                            <label for="{{ form.discount.id_for_label }}" class="mb-0">
+                                                Discount:
+                                            </label>
+                                            <div class="input-group" style="width: 150px;">
+                                                {{ form.discount }}
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <span>Discount Amount:</span>
+                                            <strong class="text-danger">- ৳ <span id="discountAmount">0.00</span></strong>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        <div class="d-flex justify-content-between">
+                                            <h5 class="mb-0">Total Payable:</h5>
+                                            <h5 class="mb-0 text-success">৳ <span id="finalTotal">0.00</span></h5>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-3">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.payment_method.id_for_label }}" class="form-label required-field">
+                                        Payment Method
+                                    </label>
+                                    {{ form.payment_method }}
+                                    {% if form.payment_method.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.payment_method.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.payment_reference.id_for_label }}" class="form-label">
+                                        Payment Reference (Optional)
+                                    </label>
+                                    {{ form.payment_reference }}
+                                    <small class="form-text text-muted">
+                                        Transaction ID, Cheque Number, etc.
+                                    </small>
+                                    {% if form.payment_reference.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.payment_reference.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notes & Status -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-sticky-note text-warning"></i> Additional Information
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.pharmacy_notes.id_for_label }}" class="form-label">
+                                    Pharmacy Notes
+                                </label>
+                                {{ form.pharmacy_notes }}
+                                <small class="form-text text-muted">
+                                    Any special instructions or observations
+                                </small>
+                                {% if form.pharmacy_notes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.pharmacy_notes.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="counselingProvided" name="counseling_provided">
+                                <label class="form-check-label" for="counselingProvided">
+                                    <strong>Patient counseling provided</strong>
+                                    <br><small class="text-muted">Medicine usage instructions explained to patient</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'pharmacy:pending_prescriptions' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="button" class="btn btn-outline-warning" onclick="savePartial()">
+                                <i class="fas fa-save"></i> Save as Partial
+                            </button>
+                            <button type="submit" name="action" value="complete" class="btn btn-success">
+                                <i class="fas fa-check"></i> Complete & Print Invoice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Quick Stats -->
+                <div class="card mb-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> Today's Sales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="display-6 text-success">
+                                ৳ {{ today_sales|default:"0.00" }}
+                            </div>
+                            <small class="text-muted">Total sales today</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Prescriptions Processed:</span>
+                            <strong>{{ today_prescriptions|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Pending:</span>
+                            <strong class="text-warning">{{ pending_count|default:"0" }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Completed:</span>
+                            <strong class="text-success">{{ completed_count|default:"0" }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Low Stock Alert -->
+                <div class="card mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle"></i> Low Stock Alert
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for drug in low_stock_drugs %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ drug.name }}</strong>
+                                        <br><small class="text-muted">{{ drug.generic_name }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-warning">{{ drug.stock }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center text-success">
+                                <i class="fas fa-check-circle"></i> All stock levels OK
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patient History -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i> Patient History
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for sale in patient_history %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <small class="text-muted">{{ sale.date|date:"d M, Y" }}</small>
+                                        <br><strong>{{ sale.medicines_count }} items</strong>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-success">৳ {{ sale.total_amount }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center text-muted">
+                                No previous purchases
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Calculate totals
+    function calculateTotal() {
+        let subtotal = 0;
+        
+        // Calculate for checked medicines only
+        document.querySelectorAll('.medicine-checkbox:checked').forEach(checkbox => {
+            const row = checkbox.closest('.medicine-row');
+            const price = parseFloat(row.dataset.medicinePrice) || 0;
+            const qtyInput = row.querySelector('.quantity-input');
+            const quantity = parseInt(qtyInput.value) || 0;
+            
+            subtotal += price * quantity;
+        });
+        
+        // Apply discount
+        const discountPercent = parseFloat(document.getElementById('{{ form.discount.id_for_label }}').value) || 0;
+        const discountAmount = (subtotal * discountPercent) / 100;
+        const total = subtotal - discountAmount;
+        
+        // Update display
+        document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+        document.getElementById('discountAmount').textContent = discountAmount.toFixed(2);
+        document.getElementById('finalTotal').textContent = total.toFixed(2);
+        document.getElementById('totalAmount').textContent = total.toFixed(2);
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+        // Attach listeners
+        document.querySelectorAll('.medicine-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', calculateTotal);
+        });
+        
+        document.querySelectorAll('.quantity-input').forEach(input => {
+            input.addEventListener('input', calculateTotal);
+        });
+        
+        document.getElementById('{{ form.discount.id_for_label }}').addEventListener('input', calculateTotal);
+        
+        // Initial calculation
+        calculateTotal();
+        
+        // Check all available medicines by default
+        document.querySelectorAll('.medicine-checkbox:not(:disabled)').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        calculateTotal();
+    });
+    
+    // Show alternatives
+    function showAlternatives(medicineId) {
+        const alternativesDiv = document.getElementById('alternatives' + medicineId);
+        alternativesDiv.style.display = alternativesDiv.style.display === 'none' ? 'block' : 'none';
+        
+        // This would typically load alternatives via AJAX
+        if (alternativesDiv.innerHTML.trim() === '') {
+            alternativesDiv.innerHTML = '<div class="mt-2"><em>Loading alternatives...</em></div>';
+            // AJAX call would go here
+        }
+    }
+    
+    // Save as partial
+    function savePartial() {
+        document.getElementById('prescriptionProcessForm').action = '?status=partial';
+        document.getElementById('prescriptionProcessForm').submit();
+    }
+    
+    // Form validation
+    document.getElementById('prescriptionProcessForm').addEventListener('submit', function(e) {
+        const checkedMedicines = document.querySelectorAll('.medicine-checkbox:checked');
+        
+        if (checkedMedicines.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one medicine to dispense');
+            return false;
+        }
+        
+        // Check if quantities are valid
+        let valid = true;
+        checkedMedicines.forEach(checkbox => {
+            const row = checkbox.closest('.medicine-row');
+            const qtyInput = row.querySelector('.quantity-input');
+            const quantity = parseInt(qtyInput.value) || 0;
+            
+            if (quantity <= 0) {
+                valid = false;
+            }
+        });
+        
+        if (!valid) {
+            e.preventDefault();
+            alert('Please enter valid quantities for all selected medicines');
+            return false;
+        }
+        
+        return true;
+    });
+</script>
+{% endblock %}

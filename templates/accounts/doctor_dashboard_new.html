@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}Doctor Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-stethoscope"></i> Doctor Dashboard</h2>
+    <div>
+        <span class="text-muted me-3">Dr. {{ user.get_full_name }}</span>
+        <a href="{% url 'accounts:display_monitor' %}" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-tv"></i> Open Display Monitor
+        </a>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning">{{ waiting_count }}</h3>
+                <p class="mb-0">Waiting</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-primary">
+            <div class="card-body text-center">
+                <h3 class="text-primary">{{ in_consultation_count }}</h3>
+                <p class="mb-0">In Consultation</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-success">
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ completed_count }}</h3>
+                <p class="mb-0">Completed Today</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call Next Patient Section -->
+<div class="card mb-4 border-primary shadow-sm">
+    <div class="card-body text-center py-4">
+        {% if next_patient %}
+        <h4 class="mb-3">
+            Next Patient: <strong class="text-primary">{{ next_patient.patient.get_full_name }}</strong> 
+            <span class="badge bg-warning fs-6">Queue #{{ next_patient.queue_number }}</span>
+        </h4>
+        <button class="btn btn-primary btn-lg px-5 py-3" id="callNextBtn" onclick="callNextPatient()">
+            <i class="bi bi-megaphone fs-3"></i><br>
+            <strong>CALL NEXT PATIENT</strong>
+        </button>
+        <p class="text-muted mt-2 mb-0"><small>Click to announce patient via display monitor and voice</small></p>
+        {% else %}
+        <i class="bi bi-check-circle display-1 text-success"></i>
+        <h4 class="text-muted mt-3">No patients waiting</h4>
+        <p class="text-muted">All appointments completed or no more patients in queue</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Current Patient in Consultation -->
+{% if current_patient %}
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-person-check-fill"></i> Current Patient</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h4 class="text-primary">{{ current_patient.patient.get_full_name }}</h4>
+                <p class="mb-1"><strong>Patient ID:</strong> {{ current_patient.patient.patient_id }}</p>
+                <p class="mb-1"><strong>Age/Gender:</strong> {{ current_patient.patient.age }} years / {{ current_patient.patient.gender }}</p>
+                <p class="mb-1"><strong>Phone:</strong> {{ current_patient.patient.phone }}</p>
+                <p class="mb-1"><strong>Blood Group:</strong> {{ current_patient.patient.blood_group }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="{% url 'patients:patient_detail' current_patient.patient.pk %}" class="btn btn-outline-info mb-2 w-100">
+                    <i class="bi bi-person-lines-fill"></i> View Patient History
+                </a>
+                <a href="{% url 'appointments:prescription_create' current_patient.pk %}" class="btn btn-success mb-2 w-100">
+                    <i class="bi bi-file-text-fill"></i> Write Prescription
+                </a>
+                <button class="btn btn-outline-success w-100" onclick="completeConsultation({{ current_patient.pk }})">
+                    <i class="bi bi-check-circle-fill"></i> Complete Consultation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Today's Appointments Table -->
+<div class="card">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Today's Appointments</h5>
+    </div>
+    <div class="card-body">
+        {% if appointments %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Queue</th>
+                        <th>Patient</th>
+                        <th>Patient ID</th>
+                        <th>Age</th>
+                        <th>Contact</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr class="{% if appointment.status == 'in_consultation' %}table-primary{% elif appointment.status == 'completed' %}table-success{% endif %}">
+                        <td><strong class="fs-5 text-primary">#{{ appointment.queue_number }}</strong></td>
+                        <td><strong>{{ appointment.patient.get_full_name }}</strong></td>
+                        <td>{{ appointment.patient.patient_id }}</td>
+                        <td>{{ appointment.patient.age }}</td>
+                        <td>{{ appointment.patient.phone }}</td>
+                        <td>{{ appointment.appointment_time|date:"g:i A" }}</td>
+                        <td>
+                            {% if appointment.status == 'waiting' %}
+                                <span class="badge bg-warning text-dark">Waiting</span>
+                            {% elif appointment.status == 'in_consultation' %}
+                                <span class="badge bg-primary">In Consultation</span>
+                            {% elif appointment.status == 'completed' %}
+                                <span class="badge bg-success">Completed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'patients:patient_detail' appointment.patient.pk %}" class="btn btn-outline-info" title="View Patient">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if appointment.status == 'completed' and appointment.prescriptions.exists %}
+                                <a href="{% url 'appointments:prescription_detail' appointment.prescriptions.first.pk %}" class="btn btn-outline-success" title="View Prescription">
+                                    <i class="bi bi-file-text"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-1 text-muted"></i>
+            <h4 class="mt-3">No appointments scheduled today</h4>
+            <p class="text-muted">Your schedule is clear</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Get CSRF token
+const csrftoken = '{{ csrf_token }}';
+
+// Call next patient function with voice announcement
+function callNextPatient() {
+    const btn = document.getElementById('callNextBtn');
+    if (!btn) return;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i><br><strong>CALLING...</strong>';
+    
+    fetch('/accounts/api/call-next-patient/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken
+        },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success notification
+            const notification = document.createElement('div');
+            notification.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                <strong>Patient Called!</strong><br>
+                ${data.patient_name} (Queue #${data.queue_number})
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(notification);
+            
+            // Reload page after 2 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            alert('Error: ' + data.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-megaphone fs-3"></i><br><strong>CALL NEXT PATIENT</strong>';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to call patient. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-megaphone fs-3"></i><br><strong>CALL NEXT PATIENT</strong>';
+    });
+}
+
+// Complete consultation function
+function completeConsultation(appointmentId) {
+    if (confirm('Mark this consultation as completed?')) {
+        fetch(`/appointments/${appointmentId}/complete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Consultation completed successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Failed to complete consultation');
+        });
+    }
+}
+
+// Auto-refresh every 60 seconds
+setInterval(() => {
+    location.reload();
+}, 60000);
+</script>
+
+{% endblock %}

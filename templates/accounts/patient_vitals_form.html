@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+
+{% block title %}Patient Vitals Entry{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-heart-pulse"></i> Patient Vitals Entry</h2>
+    <a href="{% url 'accounts:doctor_dashboard' %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<!-- Patient Information -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-person-circle"></i> Patient Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5>{{ patient.get_full_name }}</h5>
+                <p class="text-muted mb-1">Patient ID: {{ patient.patient_id }}</p>
+                <p class="text-muted mb-1">Age: {{ patient.age }} years</p>
+                <p class="text-muted mb-1">Gender: {{ patient.get_gender_display }}</p>
+            </div>
+            <div class="col-md-6">
+                <p class="text-muted mb-1">Appointment: {{ appointment.appointment_date|date:"M d, Y" }}</p>
+                <p class="text-muted mb-1">Time: {{ appointment.appointment_time|time:"g:i A" }}</p>
+                <p class="text-muted mb-1">Serial No: {{ appointment.serial_number }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vitals Entry Form -->
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Enter Patient Vitals</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-4">
+                <!-- Blood Pressure -->
+                <div class="col-md-6">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="bi bi-heart"></i> Blood Pressure</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <label class="form-label">Systolic (mmHg)</label>
+                                    <input type="number" class="form-control" name="bp_systolic" placeholder="120" min="70" max="250">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label">Diastolic (mmHg)</label>
+                                    <input type="number" class="form-control" name="bp_diastolic" placeholder="80" min="40" max="150">
+                                </div>
+                            </div>
+                            <small class="text-muted">Normal: 120/80 mmHg</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Heart Rate -->
+                <div class="col-md-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h6 class="mb-0"><i class="bi bi-heart-pulse"></i> Heart Rate</h6>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label">BPM (Beats per minute)</label>
+                            <input type="number" class="form-control" name="heart_rate" placeholder="72" min="40" max="200">
+                            <small class="text-muted">Normal: 60-100 bpm</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Temperature -->
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h6 class="mb-0"><i class="bi bi-thermometer"></i> Temperature</h6>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label">Temperature (°F)</label>
+                            <input type="number" class="form-control" name="temperature" placeholder="98.6" step="0.1" min="95" max="110">
+                            <small class="text-muted">Normal: 98.6°F (37°C)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weight -->
+                <div class="col-md-6">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="bi bi-speedometer2"></i> Weight</h6>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label">Weight (kg)</label>
+                            <input type="number" class="form-control" name="weight" placeholder="70" step="0.1" min="1" max="300">
+                            <small class="text-muted">Enter current weight</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Height -->
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="bi bi-arrows-vertical"></i> Height</h6>
+                        </div>
+                        <div class="card-body">
+                            <label class="form-label">Height (cm)</label>
+                            <input type="number" class="form-control" name="height" placeholder="170" min="50" max="250">
+                            <small class="text-muted">Enter height in centimeters</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BMI Calculator -->
+                <div class="col-md-6">
+                    <div class="card border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="mb-0"><i class="bi bi-calculator"></i> BMI</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-control-plaintext" id="bmi-display">
+                                <strong>BMI: --</strong>
+                            </div>
+                            <small class="text-muted">BMI will be calculated automatically</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Notes -->
+            <div class="mt-4">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="bi bi-file-text"></i> Additional Notes & Observations</h6>
+                    </div>
+                    <div class="card-body">
+                        <textarea class="form-control" name="notes" rows="4" placeholder="Enter any additional observations, symptoms, or notes about the patient's condition..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-4 d-flex justify-content-between">
+                <div>
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearForm()">
+                        <i class="bi bi-arrow-clockwise"></i> Clear Form
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-primary" onclick="saveAsDraft()">
+                        <i class="bi bi-file-earmark"></i> Save as Draft
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Save Vitals
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Previous Vitals History -->
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Previous Vitals History</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>BP</th>
+                        <th>HR</th>
+                        <th>Temp</th>
+                        <th>Weight</th>
+                        <th>BMI</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Mock previous data -->
+                    <tr>
+                        <td>Oct 20, 2025</td>
+                        <td>120/80</td>
+                        <td>72</td>
+                        <td>98.6°F</td>
+                        <td>70 kg</td>
+                        <td>24.2</td>
+                        <td>Normal vitals</td>
+                    </tr>
+                    <tr>
+                        <td>Oct 15, 2025</td>
+                        <td>118/78</td>
+                        <td>68</td>
+                        <td>98.4°F</td>
+                        <td>69.5 kg</td>
+                        <td>24.0</td>
+                        <td>Slight weight loss</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// BMI Calculator
+function calculateBMI() {
+    const weight = document.querySelector('input[name="weight"]').value;
+    const height = document.querySelector('input[name="height"]').value;
+    
+    if (weight && height) {
+        const heightInMeters = height / 100;
+        const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+        
+        let category = '';
+        if (bmi < 18.5) category = 'Underweight';
+        else if (bmi < 25) category = 'Normal';
+        else if (bmi < 30) category = 'Overweight';
+        else category = 'Obese';
+        
+        document.getElementById('bmi-display').innerHTML = 
+            `<strong>BMI: ${bmi}</strong> <span class="text-muted">(${category})</span>`;
+    }
+}
+
+// Add event listeners for BMI calculation
+document.querySelector('input[name="weight"]').addEventListener('input', calculateBMI);
+document.querySelector('input[name="height"]').addEventListener('input', calculateBMI);
+
+function clearForm() {
+    if (confirm('Clear all entered data?')) {
+        document.querySelector('form').reset();
+        document.getElementById('bmi-display').innerHTML = '<strong>BMI: --</strong>';
+    }
+}
+
+function saveAsDraft() {
+    alert('Save as draft functionality would be implemented here');
+}
+
+// Validate vitals ranges
+document.addEventListener('DOMContentLoaded', function() {
+    const bpSystolic = document.querySelector('input[name="bp_systolic"]');
+    const bpDiastolic = document.querySelector('input[name="bp_diastolic"]');
+    const heartRate = document.querySelector('input[name="heart_rate"]');
+    const temperature = document.querySelector('input[name="temperature"]');
+    
+    function validateVitals() {
+        // Add visual feedback for abnormal values
+        const systolic = parseInt(bpSystolic.value);
+        const diastolic = parseInt(bpDiastolic.value);
+        const hr = parseInt(heartRate.value);
+        const temp = parseFloat(temperature.value);
+        
+        // Blood pressure validation
+        if (systolic > 140 || diastolic > 90) {
+            bpSystolic.classList.add('border-danger');
+            bpDiastolic.classList.add('border-danger');
+        } else {
+            bpSystolic.classList.remove('border-danger');
+            bpDiastolic.classList.remove('border-danger');
+        }
+        
+        // Heart rate validation
+        if (hr < 60 || hr > 100) {
+            heartRate.classList.add('border-warning');
+        } else {
+            heartRate.classList.remove('border-warning');
+        }
+        
+        // Temperature validation
+        if (temp > 100.4) {
+            temperature.classList.add('border-danger');
+        } else {
+            temperature.classList.remove('border-danger');
+        }
+    }
+    
+    bpSystolic.addEventListener('blur', validateVitals);
+    bpDiastolic.addEventListener('blur', validateVitals);
+    heartRate.addEventListener('blur', validateVitals);
+    temperature.addEventListener('blur', validateVitals);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-person-circle"></i> User Profile</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Username:</div>
+                    <div class="col-md-9">{{ user.username }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Full Name:</div>
+                    <div class="col-md-9">{{ user.get_full_name|default:"Not set" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Email:</div>
+                    <div class="col-md-9">{{ user.email|default:"Not set" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Role:</div>
+                    <div class="col-md-9">
+                        <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Phone:</div>
+                    <div class="col-md-9">{{ user.phone|default:"Not set" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Address:</div>
+                    <div class="col-md-9">{{ user.address|default:"Not set" }}</div>
+                </div>
+                {% if user.is_doctor %}
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Specialization:</div>
+                    <div class="col-md-9">{{ user.specialization|default:"Not specified" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">License Number:</div>
+                    <div class="col-md-9">{{ user.license_number|default:"Not set" }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Member Since:</div>
+                    <div class="col-md-9">{{ user.date_joined|date:"F d, Y" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header">
+                <h6 class="mb-0">Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'accounts:dashboard' %}" class="btn btn-primary w-100 mb-2">
+                    <i class="bi bi-speedometer2"></i> Go to Dashboard
+                </a>
+                <a href="/admin/accounts/user/{{ user.id }}/password/" class="btn btn-outline-warning w-100 mb-2">
+                    <i class="bi bi-key"></i> Change Password
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Account Status</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Status:</strong> 
+                    {% if user.is_active %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                </p>
+                <p class="mb-0">
+                    <strong>Last Login:</strong><br>
+                    {{ user.last_login|date:"F d, Y g:i A"|default:"Never" }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

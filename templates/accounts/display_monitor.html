@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Queue Display</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        .display-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+        }
+        
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        
+        .current-call {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 4rem 2rem;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+        
+        .current-call h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        
+        .current-call .patient-info {
+            font-size: 5rem;
+            font-weight: bold;
+            margin: 2rem 0;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .current-call .doctor-info {
+            font-size: 2rem;
+            margin-top: 1rem;
+        }
+        
+        .current-call .room-number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-top: 1rem;
+            background: rgba(255,255,255,0.2);
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            display: inline-block;
+        }
+        
+        .queue-list {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .queue-list h3 {
+            color: #667eea;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .queue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            font-size: 1.5rem;
+        }
+        
+        .queue-item:nth-child(even) {
+            background: #e9ecef;
+        }
+        
+        .queue-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            min-width: 80px;
+        }
+        
+        .patient-name {
+            flex-grow: 1;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .doctor-name {
+            color: #666;
+            font-size: 1.2rem;
+        }
+        
+        .no-patients {
+            text-align: center;
+            padding: 5rem;
+            color: #999;
+            font-size: 2rem;
+        }
+        
+        .time-display {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: white;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="time-display" id="currentTime"></div>
+    
+    <div class="display-container">
+        <div class="header">
+            <h1><i class="bi bi-hospital"></i> Diagnostic Center - Patient Queue</h1>
+        </div>
+        
+        <div id="currentCallSection" style="display: none;">
+            <div class="current-call" id="currentCall">
+                <h2>NOW CALLING</h2>
+                <div class="patient-info">
+                    <i class="bi bi-person-circle"></i> <span id="calledPatientName"></span>
+                </div>
+                <div class="queue-number">Queue #<span id="calledQueueNumber"></span></div>
+                <div class="doctor-info">
+                    <i class="bi bi-stethoscope"></i> Dr. <span id="calledDoctorName"></span>
+                </div>
+                <div class="room-number">
+                    <i class="bi bi-door-open"></i> Room <span id="calledRoomNumber"></span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="queue-list">
+            <h3><i class="bi bi-list-ol"></i> Waiting Queue</h3>
+            <div id="queueContainer">
+                {% if waiting_queue %}
+                    {% for appointment in waiting_queue %}
+                    <div class="queue-item">
+                        <div class="queue-number">#{{ appointment.queue_number }}</div>
+                        <div class="patient-name">{{ appointment.patient.get_full_name }}</div>
+                        <div class="doctor-name">Dr. {{ appointment.doctor.get_full_name }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-patients">
+                        <i class="bi bi-check-circle display-1 text-success"></i>
+                        <p class="mt-3">No patients in queue</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+            const dateString = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('currentTime').innerHTML = `${timeString}<br><small>${dateString}</small>`;
+        }
+        
+        updateTime();
+        setInterval(updateTime, 1000);
+        
+        // WebSocket connection for real-time updates
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/display/`;
+        const socket = new WebSocket(wsUrl);
+        
+        // Text-to-Speech for announcements
+        function speakAnnouncement(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                speechSynthesis.speak(utterance);
+            }
+        }
+        
+        socket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            
+            if (data.type === 'patient_called') {
+                // Show current call section
+                document.getElementById('currentCallSection').style.display = 'block';
+                
+                // Update display
+                document.getElementById('calledPatientName').textContent = data.patient_name;
+                document.getElementById('calledQueueNumber').textContent = data.queue_number;
+                document.getElementById('calledDoctorName').textContent = data.doctor_name;
+                document.getElementById('calledRoomNumber').textContent = data.room_number;
+                
+                // Announce via speech
+                const announcement = `Queue number ${data.queue_number}, ${data.patient_name}, please proceed to room ${data.room_number}, Doctor ${data.doctor_name}`;
+                speakAnnouncement(announcement);
+                
+                // Refresh page after 5 seconds to update queue
+                setTimeout(() => {
+                    location.reload();
+                }, 5000);
+            }
+            
+            if (data.type === 'queue_update') {
+                // Reload to show updated queue
+                location.reload();
+            }
+        };
+        
+        socket.onclose = function(e) {
+            console.error('WebSocket closed unexpectedly');
+            // Reconnect after 3 seconds
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        };
+        
+        // Auto-refresh every 30 seconds if no activity
+        setTimeout(() => {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

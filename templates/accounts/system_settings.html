@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}System Settings{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-gear"></i> System Settings</h2>
+    <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Hospital Information -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-building"></i> Hospital Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Hospital Name</label>
+                        <input type="text" class="form-control" name="hospital_name" value="{{ settings.hospital_name }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Address</label>
+                        <textarea class="form-control" name="hospital_address" rows="3">{{ settings.hospital_address }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" name="hospital_phone" value="{{ settings.hospital_phone }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" name="hospital_email" value="{{ settings.hospital_email }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Emergency Contact</label>
+                        <input type="text" class="form-control" name="emergency_contact" value="{{ settings.emergency_contact }}">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Hospital Info</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Configuration -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-sliders"></i> System Configuration</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Appointment Duration (minutes)</label>
+                        <input type="number" class="form-control" name="appointment_duration" value="{{ settings.appointment_duration }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Working Hours Start</label>
+                        <input type="time" class="form-control" name="working_hours_start" value="{{ settings.working_hours_start }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Working Hours End</label>
+                        <input type="time" class="form-control" name="working_hours_end" value="{{ settings.working_hours_end }}">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="enable_online_booking" id="enable_online_booking">
+                        <label class="form-check-label" for="enable_online_booking">
+                            Enable Online Booking
+                        </label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="enable_sms_notifications" id="enable_sms_notifications">
+                        <label class="form-check-label" for="enable_sms_notifications">
+                            Enable SMS Notifications
+                        </label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="enable_email_notifications" id="enable_email_notifications">
+                        <label class="form-check-label" for="enable_email_notifications">
+                            Enable Email Notifications
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-success">Update Configuration</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>System Version:</strong></div>
+                    <div class="col-sm-6">{{ settings.system_version }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Last Backup:</strong></div>
+                    <div class="col-sm-6">{{ settings.last_backup|date:"M d, Y g:i A" }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Database Status:</strong></div>
+                    <div class="col-sm-6"><span class="badge bg-success">Connected</span></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Storage Used:</strong></div>
+                    <div class="col-sm-6">2.1 GB / 50 GB</div>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-warning" onclick="createBackup()">
+                        <i class="bi bi-cloud-download"></i> Create Backup
+                    </button>
+                    <button class="btn btn-outline-info" onclick="checkUpdates()">
+                        <i class="bi bi-arrow-clockwise"></i> Check Updates
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Settings -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> Security Settings</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Session Timeout (minutes)</label>
+                        <input type="number" class="form-control" name="session_timeout" value="30">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password Min Length</label>
+                        <input type="number" class="form-control" name="password_min_length" value="8">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="require_password_change" id="require_password_change">
+                        <label class="form-check-label" for="require_password_change">
+                            Require Password Change Every 90 Days
+                        </label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="enable_two_factor" id="enable_two_factor">
+                        <label class="form-check-label" for="enable_two_factor">
+                            Enable Two-Factor Authentication
+                        </label>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="log_user_activities" id="log_user_activities" checked>
+                        <label class="form-check-label" for="log_user_activities">
+                            Log User Activities
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-warning">Update Security</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> Notification Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Email Notifications</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email_appointments">
+                            <label class="form-check-label" for="email_appointments">
+                                New Appointment Bookings
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email_lab_results">
+                            <label class="form-check-label" for="email_lab_results">
+                                Lab Results Ready
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="email_payments">
+                            <label class="form-check-label" for="email_payments">
+                                Payment Confirmations
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>SMS Notifications</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sms_reminders">
+                            <label class="form-check-label" for="sms_reminders">
+                                Appointment Reminders
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sms_queue_updates">
+                            <label class="form-check-label" for="sms_queue_updates">
+                                Queue Status Updates
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sms_prescriptions">
+                            <label class="form-check-label" for="sms_prescriptions">
+                                Prescription Ready
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <button type="submit" class="btn btn-secondary">Update Notifications</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function createBackup() {
+    if (confirm('Create system backup? This may take a few minutes.')) {
+        alert('Backup creation would be implemented here');
+    }
+}
+
+function checkUpdates() {
+    alert('System update check would be implemented here');
+}
+</script>
+{% endblock %}

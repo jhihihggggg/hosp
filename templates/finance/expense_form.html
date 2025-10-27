@@ -1,0 +1,532 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - Finance{% endblock %}
+
+{% block extra_css %}
+<style>
+    .expense-form-card {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: none;
+    }
+    
+    .form-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .amount-preview {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #dc3545;
+        padding: 15px;
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        border-radius: 8px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    
+    .expense-category-card {
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-bottom: 10px;
+    }
+    
+    .expense-category-card:hover {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+    
+    .expense-category-card.selected {
+        border-color: #dc3545;
+        background-color: #f8d7da;
+    }
+    
+    .budget-alert {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .budget-alert.warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+    }
+    
+    .budget-alert.danger {
+        background-color: #f8d7da;
+        border: 1px solid #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-minus-circle text-danger"></i> {{ title }}
+                    </h2>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'finance:expense_list' %}">Expenses</a></li>
+                            <li class="breadcrumb-item active">{{ title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'finance:expense_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="expenseForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-lg-8">
+                <div class="card expense-form-card">
+                    <div class="card-body">
+                        <!-- Amount Preview -->
+                        <div class="amount-preview" id="amountPreview">
+                            ৳ <span id="amountValue">0.00</span>
+                        </div>
+
+                        <!-- Budget Alert -->
+                        {% if budget_warning %}
+                        <div class="budget-alert warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Budget Warning:</strong> This expense will exceed {{ budget_warning }}% of the monthly budget!
+                        </div>
+                        {% endif %}
+
+                        <!-- Basic Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-info-circle text-primary"></i> Basic Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.category.id_for_label }}" class="form-label required-field">
+                                        Category
+                                    </label>
+                                    {{ form.category }}
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.category.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.date.id_for_label }}" class="form-label required-field">
+                                        Date
+                                    </label>
+                                    {{ form.date }}
+                                    {% if form.date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.date.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.amount.id_for_label }}" class="form-label required-field">
+                                        Amount (৳)
+                                    </label>
+                                    {{ form.amount }}
+                                    {% if form.amount.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.amount.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.payment_method.id_for_label }}" class="form-label required-field">
+                                        Payment Method
+                                    </label>
+                                    {{ form.payment_method }}
+                                    {% if form.payment_method.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.payment_method.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.purpose.id_for_label }}" class="form-label required-field">
+                                    Expense Purpose
+                                </label>
+                                {{ form.purpose }}
+                                <small class="form-text text-muted">
+                                    Describe what this expense is for
+                                </small>
+                                {% if form.purpose.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.purpose.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.description.id_for_label }}" class="form-label">
+                                    Detailed Description/Notes
+                                </label>
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.description.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Vendor/Payee Information -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-user-tie text-info"></i> Vendor/Payee Information
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.vendor_name.id_for_label }}" class="form-label">
+                                        Vendor/Payee Name
+                                    </label>
+                                    {{ form.vendor_name }}
+                                    {% if form.vendor_name.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vendor_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.vendor_contact.id_for_label }}" class="form-label">
+                                        Contact Number
+                                    </label>
+                                    {{ form.vendor_contact }}
+                                    {% if form.vendor_contact.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.vendor_contact.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="{{ form.vendor_address.id_for_label }}" class="form-label">
+                                    Vendor Address
+                                </label>
+                                {{ form.vendor_address }}
+                                {% if form.vendor_address.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.vendor_address.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Reference & Approval -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-link text-warning"></i> Reference & Approval
+                            </h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.bill_number.id_for_label }}" class="form-label">
+                                        Bill/Invoice Number
+                                    </label>
+                                    {{ form.bill_number }}
+                                    {% if form.bill_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.bill_number.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.reference_number.id_for_label }}" class="form-label">
+                                        Reference Number (Cheque/Transaction ID)
+                                    </label>
+                                    {{ form.reference_number }}
+                                    {% if form.reference_number.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.reference_number.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.approved_by.id_for_label }}" class="form-label">
+                                        Approved By
+                                    </label>
+                                    {{ form.approved_by }}
+                                    {% if form.approved_by.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.approved_by.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="{{ form.status.id_for_label }}" class="form-label">
+                                        Status
+                                    </label>
+                                    {{ form.status }}
+                                    {% if form.status.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.status.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Attachment -->
+                        <div class="form-section">
+                            <h5 class="mb-3">
+                                <i class="fas fa-paperclip text-success"></i> Attachment
+                            </h5>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.attachment.id_for_label }}" class="form-label">
+                                    Upload Bill/Receipt/Invoice
+                                </label>
+                                {{ form.attachment }}
+                                <small class="form-text text-muted">
+                                    Accepted formats: PDF, JPG, PNG (Max 5MB)
+                                </small>
+                                {% if form.attachment.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.attachment.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'finance:expense_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="button" class="btn btn-outline-warning" onclick="saveDraft()">
+                                <i class="fas fa-save"></i> Save as Draft
+                            </button>
+                            <button type="submit" name="action" value="save" class="btn btn-danger">
+                                <i class="fas fa-check"></i> Record Expense
+                            </button>
+                            <button type="submit" name="action" value="save_and_approve" class="btn btn-success">
+                                <i class="fas fa-check-double"></i> Record & Approve
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Today's Expenses -->
+                <div class="card mb-3">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line"></i> Today's Expenses
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <div class="display-6 text-danger">
+                                ৳ {{ today_expense|default:"0.00" }}
+                            </div>
+                            <small class="text-muted">Total spent today</small>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">Monthly Budget</small>
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar bg-danger" role="progressbar" 
+                                     style="width: {{ budget_usage|default:"0" }}%"
+                                     aria-valuenow="{{ budget_usage|default:"0" }}" 
+                                     aria-valuemin="0" aria-valuemax="100">
+                                    {{ budget_usage|default:"0" }}%
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                ৳ {{ month_expense|default:"0" }} / ৳ {{ month_budget|default:"0" }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Expense Categories -->
+                <div class="card mb-3">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list-alt"></i> Common Categories
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled mb-0">
+                            <li class="mb-2">
+                                <i class="fas fa-user-md text-primary"></i> Staff Salaries
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-flask text-info"></i> Lab Supplies
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-pills text-success"></i> Medicine Stock
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-lightbulb text-warning"></i> Utilities (Electric, Water)
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-home text-secondary"></i> Rent & Maintenance
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-tools text-dark"></i> Equipment Purchase
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Recent Expenses -->
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i> Recent Expenses
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for expense in recent_expenses %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ expense.purpose }}</strong>
+                                        <br><small class="text-muted">{{ expense.category }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="text-danger">৳ {{ expense.amount }}</strong>
+                                        <br><small class="text-muted">{{ expense.date|date:"d M" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="list-group-item text-center text-muted">
+                                No recent expenses
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Real-time amount preview
+    document.addEventListener('DOMContentLoaded', function() {
+        const amountInput = document.getElementById('{{ form.amount.id_for_label }}');
+        const amountValue = document.getElementById('amountValue');
+        
+        if (amountInput) {
+            amountInput.addEventListener('input', function() {
+                const amount = parseFloat(this.value) || 0;
+                amountValue.textContent = amount.toFixed(2);
+                
+                // Budget warning check
+                checkBudgetLimit(amount);
+            });
+            
+            // Trigger on page load
+            amountInput.dispatchEvent(new Event('input'));
+        }
+    });
+    
+    // Budget limit check
+    function checkBudgetLimit(amount) {
+        const monthBudget = parseFloat('{{ month_budget|default:"0" }}');
+        const monthExpense = parseFloat('{{ month_expense|default:"0" }}');
+        
+        if (monthBudget > 0) {
+            const newTotal = monthExpense + amount;
+            const usage = (newTotal / monthBudget) * 100;
+            
+            if (usage > 90) {
+                showBudgetWarning(usage);
+            }
+        }
+    }
+    
+    function showBudgetWarning(usage) {
+        // Already shown in template if needed
+    }
+    
+    // Form validation
+    document.getElementById('expenseForm').addEventListener('submit', function(e) {
+        const amount = document.getElementById('{{ form.amount.id_for_label }}').value;
+        const purpose = document.getElementById('{{ form.purpose.id_for_label }}').value;
+        
+        if (!amount || parseFloat(amount) <= 0) {
+            e.preventDefault();
+            alert('Please enter a valid amount greater than 0');
+            return false;
+        }
+        
+        if (!purpose || purpose.trim() === '') {
+            e.preventDefault();
+            alert('Please enter the expense purpose');
+            return false;
+        }
+        
+        // Confirm large expenses
+        if (parseFloat(amount) > 10000) {
+            if (!confirm(`You are about to record an expense of ৳${parseFloat(amount).toFixed(2)}. Are you sure?`)) {
+                e.preventDefault();
+                return false;
+            }
+        }
+        
+        return true;
+    });
+    
+    // Save as draft
+    function saveDraft() {
+        const statusField = document.getElementById('{{ form.status.id_for_label }}');
+        if (statusField) {
+            statusField.value = 'draft';
+        }
+        document.getElementById('expenseForm').submit();
+    }
+</script>
+{% endblock %}

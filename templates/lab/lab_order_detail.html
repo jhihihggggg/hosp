@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lab Order Details - {{ order.order_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.order-summary { background: #fff; border-radius:12px; padding:20px; box-shadow:0 4px 10px rgba(0,0,0,0.05); }
+.test-table th, .test-table td { vertical-align: middle; }
+.status-badge { padding:6px 12px; border-radius:18px; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="row mb-3">
+    <div class="col-8">
+      <h3><i class="fas fa-hashtag"></i> Order {{ order.order_number }}</h3>
+      <p class="text-muted mb-1">Patient: <strong>{{ order.patient.full_name }}</strong> ({{ order.patient.patient_id }})</p>
+      <p class="text-muted mb-1">Ordered by: Dr. {{ order.ordered_by.get_full_name }} on {{ order.ordered_at|date:"d M, Y h:i A" }}</p>
+      {% if order.clinical_notes %}
+      <p class="small text-muted">Clinical notes: {{ order.clinical_notes }}</p>
+      {% endif %}
+    </div>
+    <div class="col-4 text-end">
+      {% if order.priority %}<span class="badge bg-danger">URGENT</span>{% endif %}
+      <div class="mt-2">
+        {% if order.status == 'ORDERED' %}
+          <span class="status-badge bg-info text-white">Ordered</span>
+        {% elif order.status == 'SAMPLE_COLLECTED' %}
+          <span class="status-badge bg-primary text-white">Sample Collected</span>
+        {% elif order.status == 'IN_PROGRESS' %}
+          <span class="status-badge bg-warning text-dark">In Progress</span>
+        {% elif order.status == 'COMPLETED' %}
+          <span class="status-badge bg-success text-white">Completed</span>
+        {% elif order.status == 'CANCELLED' %}
+          <span class="status-badge bg-secondary text-white">Cancelled</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="order-summary mb-3">
+        <h5>Tests Ordered ({{ order.tests.count }})</h5>
+        <table class="table test-table">
+          <thead class="table-light">
+            <tr><th>Code</th><th>Test</th><th>Category</th><th>Price</th></tr>
+          </thead>
+          <tbody>
+            {% for test in order.tests.all %}
+            <tr>
+              <td>{{ test.test_code }}</td>
+              <td>{{ test.test_name }}</td>
+              <td>{{ test.get_category_display }}</td>
+              <td>৳{{ test.price|floatformat:2 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between mt-3">
+          <div>
+            <small class="text-muted">Sample Type: <strong>{{ order.tests.first.sample_type }}</strong></small>
+          </div>
+          <div>
+            <strong>Total:</strong> ৳{{ order.total_amount|floatformat:2 }}
+          </div>
+        </div>
+      </div>
+
+      {% if order.status == 'ORDERED' %}
+      <div class="mb-3">
+        <form method="post" action="{% url 'lab:collect_sample' order.id %}">{% csrf_token %}
+          <button class="btn btn-primary"><i class="fas fa-vial"></i> Mark Sample Collected</button>
+        </form>
+      </div>
+      {% endif %}
+
+      {% if order.status in ['SAMPLE_COLLECTED','IN_PROGRESS'] %}
+      <div class="mb-3">
+        <a href="{% url 'lab:result_entry' order.id %}" class="btn btn-warning"><i class="fas fa-edit"></i> Enter Results</a>
+      </div>
+      {% endif %}
+
+      {% if order.status == 'COMPLETED' %}
+      <div class="mb-3">
+        <a href="{% url 'lab:report_view' order.id %}" class="btn btn-success"><i class="fas fa-file-medical"></i> View Report</a>
+        <a href="{% url 'lab:report_print' order.id %}" target="_blank" class="btn btn-outline-primary"><i class="fas fa-print"></i> Print Report</a>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card">
+        <div class="card-body">
+          <h6>Collection</h6>
+          <p class="mb-1"><strong>Collected:</strong> {% if order.sample_collected_at %}{{ order.sample_collected_at|date:"d M, Y h:i A" }} by {{ order.sample_collected_by.get_full_name }}{% else %}Not yet collected{% endif %}</p>
+          <hr>
+          <h6>Billing</h6>
+          <p class="mb-1"><strong>Amount:</strong> ৳{{ order.total_amount|floatformat:2 }}</p>
+          <p class="mb-1"><strong>Paid:</strong> {% if order.is_paid %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-warning">No</span>{% endif %}</p>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-body">
+          <h6>Actions</h6>
+          <div class="d-grid gap-2">
+            <button class="btn btn-outline-secondary" onclick="viewDetails()">View Audit Log</button>
+            <button class="btn btn-outline-danger" onclick="cancelOrder({{ order.id }})">Cancel Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function cancelOrder(id){
+  if(confirm('Cancel this order?')){
+    fetch(`/lab/order/${id}/cancel/`,{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(()=>location.reload())
+  }
+}
+</script>
+
+{% endblock %}

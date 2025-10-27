@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+
+{% block title %}Canteen Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-cup-hot"></i> Canteen Dashboard</h2>
+    <span class="text-muted">{{ user.get_full_name }}</span>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-success">
+            <div class="card-body text-center">
+                <h3 class="text-success">{{ today_orders }}</h3>
+                <p class="mb-0">Today's Orders</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-info">
+            <div class="card-body text-center">
+                <h3 class="text-info">₹{{ today_revenue|default:"0" }}</h3>
+                <p class="mb-0">Today's Revenue</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning">{{ active_orders }}</h3>
+                <p class="mb-0">Active Orders</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <a href="{% url 'survey:canteen_order_create' %}" class="btn btn-outline-primary w-100 py-3">
+                    <i class="bi bi-plus-circle fs-2 d-block mb-2"></i>
+                    New Order
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{% url 'survey:canteen_menu' %}" class="btn btn-outline-success w-100 py-3">
+                    <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
+                    View Menu
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{% url 'survey:canteen_report' %}" class="btn btn-outline-info w-100 py-3">
+                    <i class="bi bi-graph-up fs-2 d-block mb-2"></i>
+                    Sales Report
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Orders -->
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-clock"></i> Active Orders</h5>
+    </div>
+    <div class="card-body">
+        {% if active_orders_list %}
+        <div class="row g-3">
+            {% for order in active_orders_list %}
+            <div class="col-md-6">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="mb-1">Order #{{ order.order_number }}</h5>
+                                <p class="text-muted mb-0">{{ order.customer_name }}</p>
+                            </div>
+                            <span class="badge bg-warning">{{ order.get_status_display }}</span>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Items:</strong>
+                            <ul class="list-unstyled mb-0 mt-2">
+                                {% for item in order.items.all %}
+                                <li><i class="bi bi-dot"></i> {{ item.item_name }} x {{ item.quantity }} - ₹{{ item.price }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <strong>Total: ₹{{ order.total_amount }}</strong>
+                            <div class="btn-group btn-group-sm">
+                                {% if order.status == 'pending' %}
+                                <button class="btn btn-primary" onclick="updateOrderStatus({{ order.pk }}, 'preparing')">
+                                    <i class="bi bi-play"></i> Start
+                                </button>
+                                {% elif order.status == 'preparing' %}
+                                <button class="btn btn-success" onclick="updateOrderStatus({{ order.pk }}, 'ready')">
+                                    <i class="bi bi-check"></i> Ready
+                                </button>
+                                {% elif order.status == 'ready' %}
+                                <button class="btn btn-info" onclick="updateOrderStatus({{ order.pk }}, 'delivered')">
+                                    <i class="bi bi-box"></i> Deliver
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-check-circle display-1 text-success"></i>
+            <h4 class="mt-3">No Active Orders</h4>
+            <p class="text-muted">All orders have been completed</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Completed Orders -->
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="bi bi-check-circle"></i> Recently Completed</h5>
+    </div>
+    <div class="card-body">
+        {% if completed_orders %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Amount</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in completed_orders %}
+                    <tr>
+                        <td><strong>{{ order.order_number }}</strong></td>
+                        <td>{{ order.customer_name }}</td>
+                        <td>{{ order.items.count }} item(s)</td>
+                        <td>₹{{ order.total_amount }}</td>
+                        <td>{{ order.order_time|date:"g:i A" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-muted mb-0">No completed orders today</p>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function updateOrderStatus(orderId, newStatus) {
+    if (confirm('Update order status to ' + newStatus + '?')) {
+        fetch(`/survey/orders/${orderId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error updating status: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

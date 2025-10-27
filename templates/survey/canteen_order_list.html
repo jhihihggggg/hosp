@@ -1,0 +1,531 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Order Management - Canteen{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-card {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s;
+        background: white;
+    }
+    
+    .order-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .order-card.pending {
+        border-left: 5px solid #ffc107;
+        background-color: #fff3cd;
+    }
+    
+    .order-card.preparing {
+        border-left: 5px solid #0dcaf0;
+        background-color: #cff4fc;
+    }
+    
+    .order-card.ready {
+        border-left: 5px solid #198754;
+        background-color: #d1e7dd;
+    }
+    
+    .order-card.completed {
+        border-left: 5px solid #6c757d;
+        opacity: 0.8;
+    }
+    
+    .order-card.cancelled {
+        border-left: 5px solid #dc3545;
+        background-color: #f8d7da;
+        opacity: 0.7;
+    }
+    
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px dashed #dee2e6;
+    }
+    
+    .order-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #0d6efd;
+    }
+    
+    .order-time {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .order-items {
+        margin: 15px 0;
+    }
+    
+    .order-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .order-item:last-child {
+        border-bottom: none;
+    }
+    
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-weight: bold;
+    }
+    
+    .status-pending {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-preparing {
+        background-color: #cff4fc;
+        color: #055160;
+    }
+    
+    .status-ready {
+        background-color: #d1e7dd;
+        color: #0a3622;
+    }
+    
+    .status-completed {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .status-cancelled {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .timer {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #dc3545;
+    }
+    
+    .timer.warning {
+        animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .filter-tabs {
+        margin-bottom: 20px;
+    }
+    
+    .filter-tab {
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 2px solid transparent;
+        margin-right: 10px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .filter-tab.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-clipboard-list text-primary"></i> Order Management
+                    </h2>
+                    <p class="text-muted mb-0">Manage and track canteen orders</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-outline-primary" onclick="refreshOrders()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                    <a href="{% url 'survey:canteen_menu' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-utensils"></i> Menu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #fff3cd 0%, #ffc107 100%);">
+                <i class="fas fa-clock fa-3x mb-2" style="color: #856404;"></i>
+                <h3 class="mb-0">{{ pending_count|default:"0" }}</h3>
+                <p class="mb-0">Pending Orders</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #cff4fc 0%, #0dcaf0 100%);">
+                <i class="fas fa-fire fa-3x mb-2" style="color: #055160;"></i>
+                <h3 class="mb-0">{{ preparing_count|default:"0" }}</h3>
+                <p class="mb-0">Preparing</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #d1e7dd 0%, #198754 100%);">
+                <i class="fas fa-check-circle fa-3x mb-2" style="color: #0a3622;"></i>
+                <h3 class="mb-0">{{ ready_count|default:"0" }}</h3>
+                <p class="mb-0">Ready for Pickup</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card" style="background: linear-gradient(135deg, #d1e7dd 0%, #198754 100%);">
+                <i class="fas fa-dollar-sign fa-3x mb-2" style="color: #0a3622;"></i>
+                <h3 class="mb-0">৳ {{ today_revenue|default:"0" }}</h3>
+                <p class="mb-0">Today's Revenue</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+        <button class="btn filter-tab active" onclick="filterOrders('all')" id="tab-all">
+            All Orders
+        </button>
+        <button class="btn filter-tab" onclick="filterOrders('pending')" id="tab-pending">
+            Pending
+        </button>
+        <button class="btn filter-tab" onclick="filterOrders('preparing')" id="tab-preparing">
+            Preparing
+        </button>
+        <button class="btn filter-tab" onclick="filterOrders('ready')" id="tab-ready">
+            Ready
+        </button>
+        <button class="btn filter-tab" onclick="filterOrders('completed')" id="tab-completed">
+            Completed
+        </button>
+    </div>
+
+    <!-- Orders List -->
+    <div class="row">
+        {% for order in orders %}
+        <div class="col-lg-6 col-xl-4 order-item" data-status="{{ order.status }}">
+            <div class="order-card {{ order.status }}">
+                <!-- Order Header -->
+                <div class="order-header">
+                    <div>
+                        <div class="order-number">#{{ order.order_number }}</div>
+                        <div class="order-time">
+                            <i class="fas fa-clock"></i> {{ order.created_at|date:"h:i A" }}
+                            <span class="timer ms-2" data-time="{{ order.created_at|date:'U' }}">
+                                <span class="elapsed-time"></span>
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="status-badge status-{{ order.status }}">
+                            {{ order.get_status_display|upper }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Customer Info -->
+                <div class="mb-3">
+                    <strong><i class="fas fa-user"></i> {{ order.customer_name|default:"Walk-in Customer" }}</strong>
+                    {% if order.patient %}
+                    <br><small class="text-muted">Patient ID: {{ order.patient.patient_id }}</small>
+                    {% endif %}
+                    <br><small class="text-muted">
+                        <i class="fas fa-map-marker-alt"></i> {{ order.delivery_location }}
+                    </small>
+                </div>
+
+                <!-- Order Items -->
+                <div class="order-items">
+                    <strong class="d-block mb-2">Items:</strong>
+                    {% for item in order.items.all %}
+                    <div class="order-item">
+                        <div>
+                            <strong>{{ item.menu_item.name }}</strong>
+                            <br><small class="text-muted">Qty: {{ item.quantity }}</small>
+                        </div>
+                        <div class="text-end">
+                            <strong>৳ {{ item.subtotal }}</strong>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Special Instructions -->
+                {% if order.special_instructions %}
+                <div class="alert alert-info mb-3 py-2">
+                    <small><i class="fas fa-info-circle"></i> <strong>Note:</strong> {{ order.special_instructions }}</small>
+                </div>
+                {% endif %}
+
+                <!-- Total -->
+                <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top">
+                    <h5 class="mb-0">Total:</h5>
+                    <h5 class="mb-0 text-success">৳ {{ order.total_amount }}</h5>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2">
+                    {% if order.status == 'pending' %}
+                    <button type="button" class="btn btn-sm btn-primary flex-grow-1" 
+                            onclick="updateOrderStatus({{ order.id }}, 'preparing')">
+                        <i class="fas fa-play"></i> Start Preparing
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" 
+                            onclick="cancelOrder({{ order.id }})">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    {% elif order.status == 'preparing' %}
+                    <button type="button" class="btn btn-sm btn-success flex-grow-1" 
+                            onclick="updateOrderStatus({{ order.id }}, 'ready')">
+                        <i class="fas fa-check"></i> Mark as Ready
+                    </button>
+                    {% elif order.status == 'ready' %}
+                    <button type="button" class="btn btn-sm btn-info flex-grow-1" 
+                            onclick="updateOrderStatus({{ order.id }}, 'completed')">
+                        <i class="fas fa-handshake"></i> Delivered
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                            onclick="printReceipt({{ order.id }})">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    {% elif order.status == 'completed' %}
+                    <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1" 
+                            onclick="viewOrderDetails({{ order.id }})">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" 
+                            onclick="printReceipt({{ order.id }})">
+                        <i class="fas fa-print"></i>
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="fas fa-inbox fa-5x mb-3"></i>
+                <h4>No orders found</h4>
+                <p>Orders will appear here when customers place them</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Load More -->
+    {% if orders.has_next %}
+    <div class="text-center mt-4">
+        <button type="button" class="btn btn-outline-primary" onclick="loadMore()">
+            <i class="fas fa-chevron-down"></i> Load More Orders
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Order Details Modal -->
+<div class="modal fade" id="orderDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Order Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="orderDetailsContent">
+                <!-- Content will be loaded via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printReceipt()">
+                    <i class="fas fa-print"></i> Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Update elapsed time
+    function updateTimers() {
+        document.querySelectorAll('.timer').forEach(timer => {
+            const orderTime = parseInt(timer.dataset.time);
+            const now = Math.floor(Date.now() / 1000);
+            const elapsed = now - orderTime;
+            
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            
+            const elapsedSpan = timer.querySelector('.elapsed-time');
+            elapsedSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Add warning class if more than 15 minutes
+            if (minutes > 15) {
+                timer.classList.add('warning');
+            }
+        });
+    }
+    
+    // Update timers every second
+    setInterval(updateTimers, 1000);
+    updateTimers();
+    
+    // Filter orders
+    function filterOrders(status) {
+        // Update active tab
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.getElementById(`tab-${status}`).classList.add('active');
+        
+        // Show/hide orders
+        document.querySelectorAll('.order-item').forEach(item => {
+            if (status === 'all' || item.dataset.status === status) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    // Update order status
+    function updateOrderStatus(orderId, newStatus) {
+        if (confirm(`Update order status to ${newStatus}?`)) {
+            // This would be an AJAX call
+            fetch(`/canteen/order/${orderId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Order status updated successfully');
+                    location.reload();
+                } else {
+                    alert('Failed to update order status');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred');
+            });
+        }
+    }
+    
+    // Cancel order
+    function cancelOrder(orderId) {
+        const reason = prompt('Reason for cancellation:');
+        if (reason) {
+            updateOrderStatus(orderId, 'cancelled');
+        }
+    }
+    
+    // View order details
+    function viewOrderDetails(orderId) {
+        // Load order details via AJAX
+        fetch(`/canteen/order/${orderId}/details/`)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('orderDetailsContent').innerHTML = html;
+                const modal = new bootstrap.Modal(document.getElementById('orderDetailsModal'));
+                modal.show();
+            });
+    }
+    
+    // Print receipt
+    function printReceipt(orderId) {
+        window.open(`/canteen/order/${orderId}/print/`, '_blank');
+    }
+    
+    // Refresh orders
+    function refreshOrders() {
+        location.reload();
+    }
+    
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Show toast notification
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-body bg-success text-white">
+                    <i class="fas fa-check-circle"></i> ${message}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+    
+    // Auto-refresh every 30 seconds
+    setInterval(() => {
+        if (document.querySelector('.filter-tab.active').id === 'tab-pending' || 
+            document.querySelector('.filter-tab.active').id === 'tab-preparing') {
+            refreshOrders();
+        }
+    }, 30000);
+</script>
+{% endblock %}

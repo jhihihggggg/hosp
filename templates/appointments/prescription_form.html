@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+
+{% block title %}Write Prescription{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-file-text"></i> {% if form.instance.pk %}Edit{% else %}Write{% endif %} Prescription</h2>
+    <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Prescription Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="prescriptionForm">
+                    {% csrf_token %}
+                    
+                    <!-- Patient & Appointment Info (Read-only) -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Patient:</strong> {{ appointment.patient.get_full_name }}</p>
+                                    <p class="mb-1"><strong>Age/Gender:</strong> {{ appointment.patient.age }}Y / {{ appointment.patient.get_gender_display }}</p>
+                                    {% if appointment.patient.blood_group %}
+                                    <p class="mb-0"><strong>Blood Group:</strong> <span class="badge bg-danger">{{ appointment.patient.blood_group }}</span></p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>Serial:</strong> {{ appointment.serial_number }}</p>
+                                    <p class="mb-1"><strong>Date:</strong> {{ appointment.appointment_date|date:"M d, Y" }}</p>
+                                    <p class="mb-0"><strong>Doctor:</strong> Dr. {{ appointment.doctor.get_full_name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Diagnosis -->
+                    <div class="mb-3">
+                        <label for="{{ form.diagnosis.id_for_label }}" class="form-label">
+                            <i class="bi bi-clipboard-plus"></i> Diagnosis <span class="text-danger">*</span>
+                        </label>
+                        {{ form.diagnosis }}
+                        {% if form.diagnosis.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.diagnosis.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Symptoms -->
+                    <div class="mb-3">
+                        <label for="{{ form.symptoms.id_for_label }}" class="form-label">
+                            <i class="bi bi-activity"></i> Symptoms
+                        </label>
+                        {{ form.symptoms }}
+                        {% if form.symptoms.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.symptoms.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Medicines Section -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="bi bi-capsule"></i> Medicines</h6>
+                            <button type="button" class="btn btn-sm btn-light" onclick="addMedicineRow()">
+                                <i class="bi bi-plus"></i> Add Medicine
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            {{ medicine_formset.management_form }}
+                            <div id="medicine-formset">
+                                {% for form in medicine_formset %}
+                                <div class="medicine-form border rounded p-3 mb-2" data-form-index="{{ forloop.counter0 }}">
+                                    <div class="row g-2">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Medicine Name *</label>
+                                            {{ form.medicine_name }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Dosage *</label>
+                                            {{ form.dosage }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Frequency *</label>
+                                            {{ form.frequency }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Duration *</label>
+                                            {{ form.duration }}
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">&nbsp;</label>
+                                            <button type="button" class="btn btn-danger w-100" onclick="removeMedicineRow(this)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mt-1">
+                                        <div class="col-md-12">
+                                            <label class="form-label">Instructions</label>
+                                            {{ form.instructions }}
+                                        </div>
+                                    </div>
+                                    {{ form.id }}
+                                    {{ form.DELETE }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted">
+                                <i class="bi bi-info-circle"></i> 
+                                Dosage examples: 1 tablet, 5ml, 2 capsules | 
+                                Frequency examples: Once daily, Twice daily, 3 times daily, SOS
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Lab Tests -->
+                    <div class="mb-3">
+                        <label for="{{ form.lab_tests.id_for_label }}" class="form-label">
+                            <i class="bi bi-heart-pulse"></i> Lab Tests Recommended
+                        </label>
+                        {{ form.lab_tests }}
+                        {% if form.lab_tests.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.lab_tests.errors }}
+                        </div>
+                        {% endif %}
+                        <small class="form-text text-muted">One test per line</small>
+                    </div>
+                    
+                    <!-- Follow-up Date -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.follow_up_date.id_for_label }}" class="form-label">
+                                <i class="bi bi-calendar-event"></i> Follow-up Date
+                            </label>
+                            {{ form.follow_up_date }}
+                            {% if form.follow_up_date.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.follow_up_date.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">
+                            <i class="bi bi-journal-medical"></i> Additional Notes
+                        </label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.notes.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {% if form.instance.pk %}Update{% else %}Save{% endif %} Prescription
+                        </button>
+                        <button type="submit" name="print" value="1" class="btn btn-success">
+                            <i class="bi bi-printer"></i> Save & Print
+                        </button>
+                        <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Sidebar -->
+    <div class="col-md-4">
+        <!-- Patient History -->
+        {% if appointment.patient.medical_history or appointment.patient.allergies %}
+        <div class="card mb-3">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Important Info</h6>
+            </div>
+            <div class="card-body">
+                {% if appointment.patient.allergies %}
+                <div class="alert alert-danger mb-2">
+                    <strong>Allergies:</strong><br>
+                    {{ appointment.patient.allergies }}
+                </div>
+                {% endif %}
+                {% if appointment.patient.medical_history %}
+                <p class="mb-0"><strong>Medical History:</strong><br>
+                    {{ appointment.patient.medical_history|truncatewords:30 }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Previous Prescriptions -->
+        {% if previous_prescriptions %}
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-clock-history"></i> Previous Prescriptions</h6>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% for rx in previous_prescriptions %}
+                <div class="card mb-2">
+                    <div class="card-body p-2">
+                        <small class="text-muted">{{ rx.created_at|date:"M d, Y" }}</small>
+                        <p class="mb-1"><strong>{{ rx.diagnosis }}</strong></p>
+                        <a href="{% url 'appointments:prescription_detail' rx.pk %}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-eye"></i> View
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+let formIndex = {{ medicine_formset.total_form_count }};
+
+function addMedicineRow() {
+    const formset = document.getElementById('medicine-formset');
+    const emptyForm = document.querySelector('.medicine-form').cloneNode(true);
+    
+    // Update form index
+    const html = emptyForm.innerHTML.replace(/__prefix__/g, formIndex);
+    emptyForm.innerHTML = html;
+    emptyForm.setAttribute('data-form-index', formIndex);
+    
+    // Clear values
+    emptyForm.querySelectorAll('input, textarea, select').forEach(input => {
+        input.value = '';
+    });
+    
+    formset.appendChild(emptyForm);
+    
+    // Update total forms count
+    const totalForms = document.querySelector('#id_medicines-TOTAL_FORMS');
+    totalForms.value = parseInt(totalForms.value) + 1;
+    
+    formIndex++;
+}
+
+function removeMedicineRow(button) {
+    const formRow = button.closest('.medicine-form');
+    const deleteInput = formRow.querySelector('input[name$="-DELETE"]');
+    
+    if (deleteInput) {
+        deleteInput.checked = true;
+        formRow.style.display = 'none';
+    } else {
+        formRow.remove();
+        
+        // Update total forms count
+        const totalForms = document.querySelector('#id_medicines-TOTAL_FORMS');
+        totalForms.value = parseInt(totalForms.value) - 1;
+    }
+}
+
+// Set minimum follow-up date to tomorrow
+document.addEventListener('DOMContentLoaded', function() {
+    const followUpInput = document.querySelector('input[name="follow_up_date"]');
+    if (followUpInput && !followUpInput.value) {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        followUpInput.min = tomorrow.toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

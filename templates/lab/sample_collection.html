@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sample Collection{% endblock %}
+
+{% block extra_css %}
+<style>
+.scan-box { border:2px dashed #0d6efd; padding:30px; border-radius:12px; text-align:center; }
+.sample-list { max-height:300px; overflow:auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="scan-box">
+        <h4><i class="fas fa-barcode"></i> Scan Sample Barcode</h4>
+        <input id="barcodeInput" class="form-control mt-3" placeholder="Scan or enter order number...">
+        <button class="btn btn-primary mt-3" onclick="processBarcode()">Process</button>
+      </div>
+
+      <div class="mt-4 card sample-list">
+        <div class="card-body">
+          <h5>Recent Collections</h5>
+          <ul class="list-group" id="recentList">
+            {% for col in recent_collections %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ col.order.order_number }} - {{ col.order.patient.full_name }}
+              <span class="badge bg-success">{{ col.collected_at|date:"h:i A" }}</span>
+            </li>
+            {% empty %}
+            <li class="list-group-item">No recent collections</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-body">
+          <h5>Manual Collection</h5>
+          <form method="post" id="manualForm" action="{% url 'lab:collect_sample' 0 %}">{% csrf_token %}
+            <div class="mb-3">
+              <label>Order Number</label>
+              <input name="order_number" class="form-control">
+            </div>
+            <div class="mb-3">
+              <label>Collector</label>
+              <input name="collector" class="form-control" value="{{ request.user.get_full_name }}" readonly>
+            </div>
+            <button class="btn btn-primary">Mark Collected</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card mt-3">
+        <div class="card-body">
+          <h5>Pending Samples</h5>
+          <ul class="list-group">
+            {% for order in pending_orders %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ order.order_number }}</strong> <br>
+                <small class="text-muted">{{ order.patient.full_name }}</small>
+              </div>
+              <div>
+                <button class="btn btn-sm btn-outline-primary" onclick="collect('{{ order.id }}')">Collect</button>
+              </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item">No pending samples</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+function processBarcode(){
+  const val = document.getElementById('barcodeInput').value.trim();
+  if(!val) return alert('Enter barcode');
+  // Redirect to collect endpoint
+  window.location.href = `/lab/order/${val}/collect/`;
+}
+function collect(id){
+  fetch(`/lab/order/${id}/collect-sample/`,{method:'POST',headers:{'X-CSRFToken':'{{ csrf_token }}'}}).then(()=>location.reload())
+}
+</script>
+
+{% endblock %}

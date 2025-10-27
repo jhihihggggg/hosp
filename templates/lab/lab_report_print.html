@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Report - {{ order.order_number }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @page {
+            size: A4;
+            margin: 1cm;
+        }
+        
+        @media print {
+            body {
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+            
+            .page-break {
+                page-break-after: always;
+            }
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            font-size: 11pt;
+            line-height: 1.5;
+        }
+        
+        .report-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 15px;
+            background: white;
+        }
+        
+        .report-header {
+            border-bottom: 4px solid #0d6efd;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .lab-info {
+            text-align: center;
+        }
+        
+        .lab-info h1 {
+            color: #0d6efd;
+            font-size: 24pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .lab-info .subtitle {
+            font-size: 14pt;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+        
+        .lab-info p {
+            margin: 2px 0;
+            font-size: 10pt;
+            color: #555;
+        }
+        
+        .report-title {
+            text-align: center;
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            padding: 12px;
+            margin: 20px 0;
+            font-size: 16pt;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        
+        .info-section {
+            margin-bottom: 25px;
+        }
+        
+        .info-row {
+            display: flex;
+            border-bottom: 1px solid #dee2e6;
+            padding: 8px 0;
+        }
+        
+        .info-label {
+            width: 35%;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .info-value {
+            width: 65%;
+            color: #555;
+        }
+        
+        .patient-box,
+        .doctor-box {
+            border: 2px solid #0d6efd;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+        }
+        
+        .patient-box h5,
+        .doctor-box h5 {
+            color: #0d6efd;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 10pt;
+        }
+        
+        .results-table thead {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+        }
+        
+        .results-table th {
+            padding: 12px 10px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #0d6efd;
+        }
+        
+        .results-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .results-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .test-name {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        
+        .result-value {
+            font-weight: bold;
+            font-size: 11pt;
+        }
+        
+        .result-normal {
+            color: #198754;
+        }
+        
+        .result-high {
+            color: #dc3545;
+            background-color: #f8d7da;
+        }
+        
+        .result-low {
+            color: #ffc107;
+            background-color: #fff3cd;
+        }
+        
+        .reference-range {
+            font-size: 9pt;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .interpretation-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .interpretation-box h6 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .critical-alert {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .critical-alert h6 {
+            color: #842029;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        
+        .notes-section {
+            background-color: #e7f3ff;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .notes-section h6 {
+            color: #084298;
+            margin-bottom: 10px;
+        }
+        
+        .signature-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            page-break-inside: avoid;
+        }
+        
+        .signature-box {
+            width: 200px;
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-top: 2px solid #333;
+            margin-top: 50px;
+            padding-top: 8px;
+            font-weight: bold;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 9pt;
+            border-top: 2px solid #dee2e6;
+            padding-top: 15px;
+            page-break-inside: avoid;
+        }
+        
+        .qr-code {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8pt;
+            color: #999;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        .status-completed {
+            background-color: #d1e7dd;
+            color: #0a3622;
+            border: 2px solid #0a3622;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 2px solid #856404;
+        }
+        
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 80pt;
+            color: rgba(13, 110, 253, 0.08);
+            z-index: -1;
+            font-weight: bold;
+        }
+        
+        .methodology-note {
+            font-size: 8pt;
+            color: #888;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Watermark -->
+    {% if order.status == 'draft' or not order.verified_by %}
+    <div class="watermark">PRELIMINARY</div>
+    {% endif %}
+
+    <div class="report-container">
+        <!-- Print Controls -->
+        <div class="no-print text-center mb-3">
+            <button onclick="window.print()" class="btn btn-primary btn-lg">
+                <i class="fas fa-print"></i> Print Report
+            </button>
+            <button onclick="window.close()" class="btn btn-secondary btn-lg ms-2">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+
+        <!-- Lab Header -->
+        <div class="report-header">
+            <div class="lab-info">
+                <h1>{{ lab_name|default:"Clinical Laboratory" }}</h1>
+                <div class="subtitle">Diagnostic & Pathology Services</div>
+                <p>{{ lab_address|default:"123 Medical Street, Dhaka-1000, Bangladesh" }}</p>
+                <p>Phone: {{ lab_phone|default:"+880 1234-567890" }} | Email: {{ lab_email|default:"lab@diagnosticcenter.com" }}</p>
+                <p>BMDC Reg. No: {{ lab_reg|default:"LAB-2024-001" }} | ISO Certified</p>
+            </div>
+        </div>
+
+        <!-- Report Title -->
+        <div class="report-title">
+            LABORATORY INVESTIGATION REPORT
+        </div>
+
+        <!-- Report Information Bar -->
+        <div class="row mb-3">
+            <div class="col-6">
+                <div class="info-row">
+                    <span class="info-label">Report ID:</span>
+                    <span class="info-value"><strong>{{ order.order_number }}</strong></span>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="info-row">
+                    <span class="info-label">Status:</span>
+                    <span class="info-value">
+                        <span class="status-badge status-{{ order.status }}">
+                            {{ order.get_status_display|upper }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Information -->
+        <div class="row">
+            <div class="col-7">
+                <div class="patient-box">
+                    <h5><i class="fas fa-user-injured"></i> Patient Information</h5>
+                    <div class="info-row">
+                        <span class="info-label">Name:</span>
+                        <span class="info-value">{{ order.patient.full_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Patient ID:</span>
+                        <span class="info-value">{{ order.patient.patient_id }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Age/Gender:</span>
+                        <span class="info-value">{{ order.patient.age }} Years / {{ order.patient.get_gender_display }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Contact:</span>
+                        <span class="info-value">{{ order.patient.phone }}</span>
+                    </div>
+                    {% if order.patient.blood_group %}
+                    <div class="info-row">
+                        <span class="info-label">Blood Group:</span>
+                        <span class="info-value"><strong>{{ order.patient.blood_group }}</strong></span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-5">
+                <div class="doctor-box">
+                    <h5><i class="fas fa-user-md"></i> Referred By</h5>
+                    {% if order.doctor %}
+                    <div class="info-row">
+                        <span class="info-label">Doctor:</span>
+                        <span class="info-value">{{ order.doctor.full_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Dept:</span>
+                        <span class="info-value">{{ order.doctor.department|default:"General" }}</span>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Self-referred</p>
+                    {% endif %}
+                    
+                    <div style="margin-top: 15px;">
+                        <div class="info-row">
+                            <span class="info-label">Order Date:</span>
+                            <span class="info-value">{{ order.created_at|date:"d M, Y" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Sample Date:</span>
+                            <span class="info-value">{{ order.collection_date|date:"d M, Y" }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Report Date:</span>
+                            <span class="info-value">{{ order.report_date|date:"d M, Y"|default:"Processing" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Notes -->
+        {% if order.clinical_notes %}
+        <div class="notes-section">
+            <h6><i class="fas fa-notes-medical"></i> Clinical Notes:</h6>
+            <p class="mb-0">{{ order.clinical_notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Test Results -->
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">Test Name</th>
+                    <th style="width: 20%;">Result</th>
+                    <th style="width: 15%;">Unit</th>
+                    <th style="width: 20%;">Reference Range</th>
+                    <th style="width: 15%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in order.results.all %}
+                <tr>
+                    <td>
+                        <span class="test-name">{{ result.test.name }}</span>
+                        {% if result.methodology %}
+                        <div class="methodology-note">Method: {{ result.methodology }}</div>
+                        {% endif %}
+                    </td>
+                    <td class="result-value {% if result.is_abnormal %}result-{{ result.abnormal_type }}{% else %}result-normal{% endif %}">
+                        {{ result.result_value }}
+                    </td>
+                    <td>{{ result.test.unit|default:"-" }}</td>
+                    <td class="reference-range">{{ result.test.reference_range|default:"N/A" }}</td>
+                    <td>
+                        {% if result.is_abnormal %}
+                            {% if result.abnormal_type == 'high' %}
+                                <span class="badge bg-danger">High</span>
+                            {% elif result.abnormal_type == 'low' %}
+                                <span class="badge bg-warning">Low</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="badge bg-success">Normal</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% if result.interpretation %}
+                <tr>
+                    <td colspan="5" style="background-color: #f0f0f0; font-size: 9pt; padding: 8px;">
+                        <strong>Interpretation:</strong> {{ result.interpretation }}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Critical Values Alert -->
+        {% if order.has_critical_values %}
+        <div class="critical-alert">
+            <h6><i class="fas fa-exclamation-triangle"></i> CRITICAL VALUES ALERT</h6>
+            <p class="mb-0">This report contains critical values that require immediate medical attention. Please consult your physician immediately.</p>
+        </div>
+        {% endif %}
+
+        <!-- Overall Interpretation -->
+        {% if order.overall_interpretation %}
+        <div class="interpretation-box">
+            <h6><i class="fas fa-comments"></i> Overall Interpretation:</h6>
+            <p class="mb-0">{{ order.overall_interpretation }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Lab Comments/Notes -->
+        {% if order.lab_notes %}
+        <div class="notes-section">
+            <h6><i class="fas fa-clipboard"></i> Lab Comments:</h6>
+            <p class="mb-0">{{ order.lab_notes }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Quality Control Info -->
+        <div style="margin-top: 20px; font-size: 9pt; color: #666; padding: 10px; background-color: #f8f9fa; border-radius: 5px;">
+            <strong>Quality Control:</strong> All tests performed using calibrated equipment and reagents within expiry dates. 
+            Internal quality control passed. Reference ranges are age and gender specific where applicable.
+        </div>
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <div class="signature-line">
+                    Technologist
+                </div>
+                {% if order.technician %}
+                <div style="margin-top: 5px; font-size: 9pt;">
+                    {{ order.technician.get_full_name }}
+                </div>
+                {% endif %}
+            </div>
+            <div class="signature-box">
+                <div class="qr-code">
+                    [QR Code]
+                </div>
+                <small style="display: block; margin-top: 5px;">Verification Code</small>
+            </div>
+            <div class="signature-box">
+                <div class="signature-line">
+                    Pathologist
+                </div>
+                {% if order.verified_by %}
+                <div style="margin-top: 5px; font-size: 9pt;">
+                    {{ order.verified_by.get_full_name }}
+                    <br>BMDC Reg: {{ order.verified_by.bmdc_reg|default:"N/A" }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p class="mb-1"><strong>Important Notes:</strong></p>
+            <p class="mb-1" style="font-size: 8pt;">
+                • This report is valid only with authorized signatures and official seal<br>
+                • Test results should be correlated with clinical findings<br>
+                • For any queries, please contact our laboratory department<br>
+                • This report is generated electronically and is valid without signature if marked "Verified"
+            </p>
+            <p class="mb-0" style="margin-top: 10px;">
+                <strong>Report Generated:</strong> {{ now|date:"d M, Y h:i A" }} | 
+                <strong>Printed by:</strong> {{ user.get_full_name|default:"System" }}
+            </p>
+            <p style="margin-top: 5px; font-size: 8pt;">
+                <em>--- END OF REPORT ---</em>
+            </p>
+        </div>
+    </div>
+
+    <!-- Auto-print script (uncomment if needed) -->
+    <!-- <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script> -->
+</body>
+</html>

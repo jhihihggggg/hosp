@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Activity Logs{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-clock-history"></i> Activity Logs</h2>
+    <div>
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+        <button class="btn btn-outline-secondary" onclick="exportLogs()">
+            <i class="bi bi-download"></i> Export Logs
+        </button>
+    </div>
+</div>
+
+<!-- Filter Options -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Logs</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Date From</label>
+                <input type="date" class="form-control" name="date_from" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Date To</label>
+                <input type="date" class="form-control" name="date_to" value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Activity Type</label>
+                <select class="form-select" name="activity_type">
+                    <option value="">All Types</option>
+                    <option value="appointment" {% if request.GET.activity_type == 'appointment' %}selected{% endif %}>Appointments</option>
+                    <option value="patient" {% if request.GET.activity_type == 'patient' %}selected{% endif %}>Patient Management</option>
+                    <option value="lab" {% if request.GET.activity_type == 'lab' %}selected{% endif %}>Lab Activities</option>
+                    <option value="pharmacy" {% if request.GET.activity_type == 'pharmacy' %}selected{% endif %}>Pharmacy</option>
+                    <option value="finance" {% if request.GET.activity_type == 'finance' %}selected{% endif %}>Financial</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">User</label>
+                <select class="form-select" name="user">
+                    <option value="">All Users</option>
+                    <!-- Dynamic user options would be populated here -->
+                </select>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Apply Filters</button>
+                <a href="{% url 'accounts:activity_logs' %}" class="btn btn-outline-secondary">Clear Filters</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Activity Summary -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card border-primary">
+            <div class="card-body text-center">
+                <h3 class="text-primary">145</h3>
+                <p class="mb-0">Total Activities Today</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-success">
+            <div class="card-body text-center">
+                <h3 class="text-success">23</h3>
+                <p class="mb-0">Appointments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-info">
+            <div class="card-body text-center">
+                <h3 class="text-info">18</h3>
+                <p class="mb-0">Lab Activities</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning">12</h3>
+                <p class="mb-0">Pharmacy Sales</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities -->
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="bi bi-list"></i> Recent Activities</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>User</th>
+                        <th>Activity</th>
+                        <th>Type</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in recent_activities %}
+                    <tr>
+                        <td>
+                            <div class="text-muted small">{{ activity.timestamp|date:"M d" }}</div>
+                            <div><strong>{{ activity.timestamp|date:"g:i A" }}</strong></div>
+                        </td>
+                        <td>
+                            <div><strong>{{ activity.user }}</strong></div>
+                            <div class="text-muted small">{{ activity.user_role|default:"Staff" }}</div>
+                        </td>
+                        <td>{{ activity.action }}</td>
+                        <td>
+                            <span class="badge bg-{% if activity.type == 'appointment' %}primary{% elif activity.type == 'patient' %}success{% elif activity.type == 'lab' %}info{% elif activity.type == 'pharmacy' %}warning{% else %}secondary{% endif %}">
+                                {{ activity.type|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" onclick="showDetails('{{ activity.id }}')">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Timeline (Mock Data) -->
+<div class="card mt-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="bi bi-graph-up"></i> Activity Timeline - Today</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6>09:15 AM - System Startup</h6>
+                            <p class="text-muted">Hospital management system started</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6>09:30 AM - First Appointments</h6>
+                            <p class="text-muted">5 patients checked in for morning appointments</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6>10:15 AM - Lab Orders Peak</h6>
+                            <p class="text-muted">15 lab orders processed in the past hour</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6>11:00 AM - Pharmacy Sales</h6>
+                            <p class="text-muted">Peak pharmacy sales period started</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-secondary"></div>
+                        <div class="timeline-content">
+                            <h6>12:00 PM - Current</h6>
+                            <p class="text-muted">System running normally</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 40px;
+    width: 2px;
+    margin-left: -1.5px;
+    background-color: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    min-height: 50px;
+    margin-bottom: 50px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: 32px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    z-index: 100;
+}
+
+.timeline-content {
+    margin-left: 70px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    color: #495057;
+}
+
+.timeline-content p {
+    margin-bottom: 0;
+    font-size: 0.9em;
+}
+</style>
+
+<script>
+function showDetails(activityId) {
+    alert('Activity details would be shown here for ID: ' + activityId);
+}
+
+function exportLogs() {
+    if (confirm('Export activity logs to CSV?')) {
+        alert('Log export functionality would be implemented here');
+    }
+}
+</script>
+{% endblock %}
