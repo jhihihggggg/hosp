@@ -766,7 +766,12 @@ def user_login(request):
         else:
             messages.error(request, 'Invalid username or password.')
     
-    return render(request, 'accounts/login.html')
+    # Render with no-cache headers
+    response = render(request, 'accounts/login.html')
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    return response
 
 
 def user_logout(request):
