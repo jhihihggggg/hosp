@@ -38,13 +38,13 @@ mkdir -p media/patient_photos
 mkdir -p staticfiles
 mkdir -p logs
 
-# Set proper permissions on directories so www-data can write
+# Pre-create the database file and set permissions
 echo ""
-echo "🔒 Setting directory ownership..."
-sudo chown -R $USER:www-data $APP_DIR
+echo "📦 Creating and securing database file..."
+touch $APP_DIR/data/db_production.sqlite3
+sudo chown -R www-data:www-data $APP_DIR
 sudo chmod -R 775 $APP_DIR/data
-sudo chmod -R 775 $APP_DIR/media
-sudo chmod -R 775 $APP_DIR/logs
+sudo chmod 664 $APP_DIR/data/db_production.sqlite3
 
 # Run migrations
 echo ""
