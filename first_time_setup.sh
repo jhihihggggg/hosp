@@ -33,6 +33,7 @@ pip install -r requirements.txt
 # Create necessary directories
 echo ""
 echo "📁 Creating necessary directories..."
+mkdir -p data
 mkdir -p media/patient_photos
 mkdir -p staticfiles
 mkdir -p logs
@@ -70,7 +71,8 @@ echo ""
 echo "🔒 Final permissions check..."
 sudo chown -R www-data:www-data $APP_DIR
 sudo chmod -R 755 $APP_DIR
-sudo chmod 664 $APP_DIR/db.sqlite3 2>/dev/null || true
+sudo chmod 664 $APP_DIR/data/db_production.sqlite3 2>/dev/null || true
+sudo chmod 775 $APP_DIR/data 2>/dev/null || true
 
 # Setup systemd service
 echo ""
