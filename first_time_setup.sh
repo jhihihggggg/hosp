@@ -38,12 +38,15 @@ mkdir -p media/patient_photos
 mkdir -p staticfiles
 mkdir -p logs
 
-# Set proper ownership immediately
+# Set proper permissions on directories so www-data can write
 echo ""
 echo "🔒 Setting directory ownership..."
-sudo chown -R www-data:www-data $APP_DIR
+sudo chown -R $USER:www-data $APP_DIR
+sudo chmod -R 775 $APP_DIR/data
+sudo chmod -R 775 $APP_DIR/media
+sudo chmod -R 775 $APP_DIR/logs
 
-# Run migrations (as root, but Django will create files as www-data)
+# Run migrations
 echo ""
 echo "🗄️  Running database migrations..."
 python manage.py migrate --settings=diagcenter.production_settings --noinput
