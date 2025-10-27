@@ -74,22 +74,22 @@ for doc in doctors:
             user.save()
             print(f"✓ Updated: {doc['first_name']}")
         else:
-            # Create new
-            user_data = {
-                'username': doc['username'],
-                'password': doc['password'],
-                'first_name': doc['first_name'],
-                'last_name': doc.get('last_name', ''),
-                'role': doc['role'],
-                'specialization': doc['specialization'],
-                'is_active': True,
-            }
+            # Create new - first without qualification
+            user = User.objects.create_user(
+                username=doc['username'],
+                password=doc['password'],
+                first_name=doc['first_name'],
+                last_name=doc.get('last_name', ''),
+                is_active=True,
+            )
             
-            # Add qualification if field exists
-            if hasattr(User, 'qualification'):
-                user_data['qualification'] = doc['qualification']
+            # Now set additional fields
+            user.role = doc['role']
+            user.specialization = doc['specialization']
+            if hasattr(user, 'qualification'):
+                user.qualification = doc['qualification']
+            user.save()
             
-            user = User.objects.create_user(**user_data)
             print(f"✓ Created: {doc['first_name']}")
         
         print(f"  Username: {doc['username']}")
