@@ -555,3 +555,638 @@ def test_display(request):
     </html>
     """
     return HttpResponse(html)
+
+def test_pharmacy(request):
+    """Pharmacy dashboard with sales, stock management"""
+    html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Pharmacy Dashboard</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <style>
+            body { background: #f8f9fa; }
+            .sidebar { min-height: 100vh; background: #6f42c1; color: white; }
+            .sidebar a { color: #e0cffc; text-decoration: none; padding: 10px; display: block; }
+            .sidebar a:hover, .sidebar a.active { color: white; background: #5936a0; }
+            .low-stock { background: #fff3cd; }
+        </style>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-2 sidebar p-3">
+                    <h4 class="text-white mb-4"><i class="bi bi-hospital"></i> Nazipuruhs</h4>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/test-admin/"><i class="bi bi-speedometer2"></i> Admin</a>
+                        <a class="nav-link active" href="#sales" onclick="showPharmacySection('sales')"><i class="bi bi-cart-check"></i> Sales</a>
+                        <a class="nav-link" href="#stock" onclick="showPharmacySection('stock')"><i class="bi bi-box-seam"></i> Stock</a>
+                        <a class="nav-link" href="#patients" onclick="showPharmacySection('patients')"><i class="bi bi-people"></i> Patient Data</a>
+                        <a class="nav-link" href="/test-canteen/"><i class="bi bi-cup-hot"></i> Canteen</a>
+                    </nav>
+                </div>
+                
+                <div class="col-md-10 p-4">
+                    <!-- Sales Section -->
+                    <div id="sales-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-cart-check"></i> Pharmacy Sales</h2>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newSaleModal">
+                                <i class="bi bi-plus-circle"></i> New Sale
+                            </button>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-primary">৳ 30,000</h3>
+                                        <p>Today's Sales</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-success">45</h3>
+                                        <p>Transactions</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-warning">8</h3>
+                                        <p>Low Stock Items</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-info">350</h3>
+                                        <p>Total Items</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Recent Sales</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Patient</th>
+                                            <th>Items</th>
+                                            <th>Amount</th>
+                                            <th>Time</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>#PHR001</td>
+                                            <td>রহিম উদ্দিন</td>
+                                            <td>3</td>
+                                            <td>৳ 850</td>
+                                            <td>10:30 AM</td>
+                                            <td><button class="btn btn-sm btn-info"><i class="bi bi-printer"></i> Print</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#PHR002</td>
+                                            <td>সালমা খাতুন</td>
+                                            <td>5</td>
+                                            <td>৳ 1,250</td>
+                                            <td>11:15 AM</td>
+                                            <td><button class="btn btn-sm btn-info"><i class="bi bi-printer"></i> Print</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#PHR003</td>
+                                            <td>করিম মিয়া</td>
+                                            <td>2</td>
+                                            <td>৳ 650</td>
+                                            <td>12:00 PM</td>
+                                            <td><button class="btn btn-sm btn-info"><i class="bi bi-printer"></i> Print</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stock Section -->
+                    <div id="stock-section" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-box-seam"></i> Medicine Stock Management</h2>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addStockModal">
+                                <i class="bi bi-plus-circle"></i> Add Stock
+                            </button>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Medicine Name</th>
+                                            <th>Type</th>
+                                            <th>Stock Qty</th>
+                                            <th>Unit Price</th>
+                                            <th>Expiry Date</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="low-stock">
+                                            <td>Napa (Paracetamol)</td>
+                                            <td>Tablet</td>
+                                            <td><strong class="text-danger">15</strong></td>
+                                            <td>৳ 2.50</td>
+                                            <td>Dec 2025</td>
+                                            <td><span class="badge bg-warning">Low Stock</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Ace (Paracetamol)</td>
+                                            <td>Tablet</td>
+                                            <td>250</td>
+                                            <td>৳ 2.00</td>
+                                            <td>Jan 2026</td>
+                                            <td><span class="badge bg-success">In Stock</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Maxpro (Omeprazole)</td>
+                                            <td>Capsule</td>
+                                            <td>180</td>
+                                            <td>৳ 8.00</td>
+                                            <td>Mar 2026</td>
+                                            <td><span class="badge bg-success">In Stock</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button>
+                                            </td>
+                                        </tr>
+                                        <tr class="low-stock">
+                                            <td>Seclo (Omeprazole)</td>
+                                            <td>Capsule</td>
+                                            <td><strong class="text-danger">20</strong></td>
+                                            <td>৳ 7.50</td>
+                                            <td>Feb 2026</td>
+                                            <td><span class="badge bg-warning">Low Stock</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Flexi (Naproxen)</td>
+                                            <td>Tablet</td>
+                                            <td>120</td>
+                                            <td>৳ 5.00</td>
+                                            <td>Apr 2026</td>
+                                            <td><span class="badge bg-success">In Stock</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Patient Data Section -->
+                    <div id="patients-section" style="display:none;">
+                        <h2 class="mb-4"><i class="bi bi-people"></i> Patient Purchase Data</h2>
+                        
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0">Patient Medicine History</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="Search patient by name or phone...">
+                                </div>
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient Name</th>
+                                            <th>Phone</th>
+                                            <th>Last Purchase</th>
+                                            <th>Total Spent</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>রহিম উদ্দিন</td>
+                                            <td>01712-345678</td>
+                                            <td>Today</td>
+                                            <td>৳ 2,500</td>
+                                            <td><button class="btn btn-sm btn-info"><i class="bi bi-eye"></i> View History</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>সালমা খাতুন</td>
+                                            <td>01812-987654</td>
+                                            <td>Yesterday</td>
+                                            <td>৳ 3,200</td>
+                                            <td><button class="btn btn-sm btn-info"><i class="bi bi-eye"></i> View History</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>করিম মিয়া</td>
+                                            <td>01912-456789</td>
+                                            <td>2 days ago</td>
+                                            <td>৳ 1,800</td>
+                                            <td><button class="btn btn-sm btn-info"><i class="bi bi-eye"></i> View History</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- New Sale Modal -->
+        <div class="modal fade" id="newSaleModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="bi bi-cart-plus"></i> New Sale</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Patient Name</label>
+                                <input type="text" class="form-control" placeholder="Enter patient name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" placeholder="01XXXXXXXXX">
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>Add Medicines</h6>
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <select class="form-select">
+                                    <option>Select Medicine</option>
+                                    <option>Napa (Paracetamol)</option>
+                                    <option>Ace (Paracetamol)</option>
+                                    <option>Maxpro (Omeprazole)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" placeholder="Qty" value="1">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100"><i class="bi bi-plus"></i> Add</button>
+                            </div>
+                        </div>
+                        <div class="mt-3 p-3 bg-light">
+                            <strong>Total: ৳ 0</strong>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary"><i class="bi bi-printer"></i> Print Invoice</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            function showPharmacySection(section) {
+                document.getElementById('sales-section').style.display = 'none';
+                document.getElementById('stock-section').style.display = 'none';
+                document.getElementById('patients-section').style.display = 'none';
+                document.getElementById(section + '-section').style.display = 'block';
+                
+                document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                event.target.closest('a').classList.add('active');
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return HttpResponse(html)
+
+def test_canteen(request):
+    """Canteen dashboard with sales and stock management"""
+    html = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Canteen Dashboard</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+        <style>
+            body { background: #f8f9fa; }
+            .sidebar { min-height: 100vh; background: #fd7e14; color: white; }
+            .sidebar a { color: #ffe5d0; text-decoration: none; padding: 10px; display: block; }
+            .sidebar a:hover, .sidebar a.active { color: white; background: #dc6a00; }
+        </style>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-2 sidebar p-3">
+                    <h4 class="text-white mb-4"><i class="bi bi-hospital"></i> Nazipuruhs</h4>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="/test-admin/"><i class="bi bi-speedometer2"></i> Admin</a>
+                        <a class="nav-link active" href="#sales" onclick="showCanteenSection('sales')"><i class="bi bi-cart-check"></i> Sales</a>
+                        <a class="nav-link" href="#menu" onclick="showCanteenSection('menu')"><i class="bi bi-book"></i> Menu</a>
+                        <a class="nav-link" href="#stock" onclick="showCanteenSection('stock')"><i class="bi bi-box-seam"></i> Stock</a>
+                        <a class="nav-link" href="/test-pharmacy/"><i class="bi bi-capsule"></i> Pharmacy</a>
+                    </nav>
+                </div>
+                
+                <div class="col-md-10 p-4">
+                    <!-- Sales Section -->
+                    <div id="sales-section">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-cup-hot"></i> Canteen Sales</h2>
+                            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#newOrderModal">
+                                <i class="bi bi-plus-circle"></i> New Order
+                            </button>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-warning">৳ 15,000</h3>
+                                        <p>Today's Sales</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-success">85</h3>
+                                        <p>Orders</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-primary">12</h3>
+                                        <p>Pending</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <h3 class="text-info">45</h3>
+                                        <p>Menu Items</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-header bg-warning">
+                                <h5 class="mb-0">Recent Orders</h5>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Order #</th>
+                                            <th>Customer</th>
+                                            <th>Items</th>
+                                            <th>Amount</th>
+                                            <th>Time</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>#CNT001</td>
+                                            <td>Staff Room 1</td>
+                                            <td>Tea x3, Samosa x5</td>
+                                            <td>৳ 180</td>
+                                            <td>10:30 AM</td>
+                                            <td><span class="badge bg-success">Served</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#CNT002</td>
+                                            <td>Doctor Chamber</td>
+                                            <td>Coffee x2, Cake x1</td>
+                                            <td>৳ 250</td>
+                                            <td>11:00 AM</td>
+                                            <td><span class="badge bg-warning">Preparing</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>#CNT003</td>
+                                            <td>Reception</td>
+                                            <td>Lunch x4</td>
+                                            <td>৳ 600</td>
+                                            <td>12:30 PM</td>
+                                            <td><span class="badge bg-primary">Pending</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Menu Section -->
+                    <div id="menu-section" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h2><i class="bi bi-book"></i> Menu Management</h2>
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMenuItem">
+                                <i class="bi bi-plus-circle"></i> Add Item
+                            </button>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5>চা / Tea</h5>
+                                        <p class="text-muted">Hot beverage</p>
+                                        <h4 class="text-warning">৳ 15</h4>
+                                        <button class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5>কফি / Coffee</h5>
+                                        <p class="text-muted">Hot beverage</p>
+                                        <h4 class="text-warning">৳ 25</h4>
+                                        <button class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5>সমুচা / Samosa</h5>
+                                        <p class="text-muted">Snack</p>
+                                        <h4 class="text-warning">৳ 20</h4>
+                                        <button class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5>ভাত / Rice</h5>
+                                        <p class="text-muted">Main course</p>
+                                        <h4 class="text-warning">৳ 80</h4>
+                                        <button class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5>রুটি / Roti</h5>
+                                        <p class="text-muted">Main course</p>
+                                        <h4 class="text-warning">৳ 10</h4>
+                                        <button class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5>বিরিয়ানি / Biryani</h5>
+                                        <p class="text-muted">Special</p>
+                                        <h4 class="text-warning">৳ 150</h4>
+                                        <button class="btn btn-sm btn-warning"><i class="bi bi-pencil"></i> Edit</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stock Section -->
+                    <div id="stock-section" style="display:none;">
+                        <h2 class="mb-4"><i class="bi bi-box-seam"></i> Inventory Stock</h2>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <table class="table">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Unit</th>
+                                            <th>Stock Qty</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>চা পাতা / Tea Leaves</td>
+                                            <td>KG</td>
+                                            <td>5 kg</td>
+                                            <td><span class="badge bg-success">Good</span></td>
+                                            <td><button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>চিনি / Sugar</td>
+                                            <td>KG</td>
+                                            <td>15 kg</td>
+                                            <td><span class="badge bg-success">Good</span></td>
+                                            <td><button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button></td>
+                                        </tr>
+                                        <tr class="table-warning">
+                                            <td>চাল / Rice</td>
+                                            <td>KG</td>
+                                            <td>8 kg</td>
+                                            <td><span class="badge bg-warning">Low</span></td>
+                                            <td><button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>আটা / Flour</td>
+                                            <td>KG</td>
+                                            <td>20 kg</td>
+                                            <td><span class="badge bg-success">Good</span></td>
+                                            <td><button class="btn btn-sm btn-primary"><i class="bi bi-plus"></i> Add</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- New Order Modal -->
+        <div class="modal fade" id="newOrderModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning">
+                        <h5 class="modal-title"><i class="bi bi-cart-plus"></i> New Order</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Customer/Location</label>
+                            <input type="text" class="form-control" placeholder="Enter location">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Select Item</label>
+                            <select class="form-select">
+                                <option>Tea - ৳15</option>
+                                <option>Coffee - ৳25</option>
+                                <option>Samosa - ৳20</option>
+                                <option>Rice - ৳80</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quantity</label>
+                            <input type="number" class="form-control" value="1">
+                        </div>
+                        <div class="p-3 bg-light">
+                            <strong>Total: ৳ 0</strong>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning">Place Order</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            function showCanteenSection(section) {
+                document.getElementById('sales-section').style.display = 'none';
+                document.getElementById('menu-section').style.display = 'none';
+                document.getElementById('stock-section').style.display = 'none';
+                document.getElementById(section + '-section').style.display = 'block';
+                
+                document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                event.target.closest('a').classList.add('active');
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return HttpResponse(html)

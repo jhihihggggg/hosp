@@ -31,6 +31,8 @@ urlpatterns = [
     path("test-doctor/", test_views.test_doctor, name="test_doctor"),
     path("test-reception/", test_views.test_reception, name="test_reception"),
     path("test-display/", test_views.test_display, name="test_display"),
+    path("test-pharmacy/", test_views.test_pharmacy, name="test_pharmacy"),
+    path("test-canteen/", test_views.test_canteen, name="test_canteen"),
     
     # Public landing page
     path("", account_views.landing_page, name="home"),
