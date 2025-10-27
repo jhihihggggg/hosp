@@ -122,8 +122,8 @@ def admin_dashboard(request):
     
     # Staff statistics
     total_staff = User.objects.filter(is_active=True).count()
-    doctors_count = User.objects.filter(is_doctor=True, is_active=True).count()
-    nurses_count = User.objects.filter(is_nurse=True, is_active=True).count()
+    doctors_count = User.objects.filter(role='DOCTOR', is_active=True).count()
+    nurses_count = User.objects.filter(role='NURSE', is_active=True).count()
     other_staff = total_staff - doctors_count - nurses_count
     
     # Department performance
@@ -837,11 +837,11 @@ def user_management(request):
     
     # Users by role
     admins = all_users.filter(is_admin=True).count()
-    doctors = all_users.filter(is_doctor=True).count()
-    nurses = all_users.filter(is_nurse=True).count()
+    doctors = all_users.filter(role='DOCTOR').count()
+    nurses = all_users.filter(role='NURSE').count()
     receptionists = all_users.filter(is_receptionist=True).count()
-    lab_staff = all_users.filter(is_lab_staff=True).count()
-    pharmacy_staff = all_users.filter(is_pharmacy_staff=True).count()
+    lab_staff = all_users.filter(role='LAB').count()
+    pharmacy_staff = all_users.filter(role='PHARMACY').count()
     canteen_staff = all_users.filter(is_canteen_staff=True).count()
     
     context = {
