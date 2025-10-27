@@ -7,10 +7,10 @@ Type=notify
 User=www-data
 Group=www-data
 RuntimeDirectory=nazipuruhs
-WorkingDirectory=/var/www/nazipuruhs
-Environment="PATH=/var/www/nazipuruhs/venv/bin"
+WorkingDirectory=/var/www/hosp
+Environment="PATH=/var/www/hosp/venv/bin"
 Environment="DJANGO_SETTINGS_MODULE=diagcenter.production_settings"
-ExecStart=/var/www/nazipuruhs/venv/bin/gunicorn \
+ExecStart=/var/www/hosp/venv/bin/gunicorn \
     --bind 0.0.0.0:8005 \
     --workers 4 \
     --timeout 120 \

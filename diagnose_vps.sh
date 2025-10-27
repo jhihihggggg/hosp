@@ -19,7 +19,7 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 
 # Configuration
-PROJECT_DIR="/var/www/nazipuruhs"
+PROJECT_DIR="/var/www/hosp"
 SERVICE_NAME="nazipuruhs"
 PORT="8005"
 

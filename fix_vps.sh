@@ -21,7 +21,7 @@ echo -e "${BLUE}╚════════════════════�
 echo ""
 
 # Configuration
-PROJECT_DIR="/var/www/nazipuruhs"
+PROJECT_DIR="/var/www/hosp"
 SERVICE_NAME="nazipuruhs"
 GITHUB_REPO="https://github.com/jhihihggggg/hosp.git"
 BRANCH="main"
