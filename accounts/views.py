@@ -152,11 +152,11 @@ def admin_dashboard(request):
     
     # Outstanding payments and dues
     outstanding_lab_payments = LabOrder.objects.filter(
-        payment_status='pending'
+        is_paid=False
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
     outstanding_pharmacy_payments = PharmacySale.objects.filter(
-        payment_status__in=['pending', 'partial']
+        is_paid=False
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
     # Recent transactions (last 15 for better overview)
@@ -394,7 +394,7 @@ def receptionist_dashboard(request):
     # Outstanding payments (appointments not paid)
     outstanding_appointments = Appointment.objects.filter(
         appointment_date__gte=today - timedelta(days=30),
-        payment_status='pending'
+        is_paid=False
     ).select_related('patient', 'doctor')
     
     outstanding_amount = outstanding_appointments.aggregate(
@@ -403,13 +403,13 @@ def receptionist_dashboard(request):
     
     # Lab orders requiring payment
     unpaid_lab_orders = LabOrder.objects.filter(
-        payment_status='pending',
+        is_paid=False,
         ordered_at__date__gte=today - timedelta(days=7)
     ).select_related('appointment__patient')[:10]
     
     # Pharmacy sales requiring collection
     unpaid_pharmacy_sales = PharmacySale.objects.filter(
-        payment_status__in=['pending', 'partial'],
+        is_paid=False,
         sale_date__date__gte=today - timedelta(days=7)
     ).select_related('prescription__appointment__patient')[:10]
     
@@ -556,7 +556,7 @@ def pharmacy_dashboard(request):
     
     # Payment status summary
     pending_payments = PharmacySale.objects.filter(
-        payment_status__in=['pending', 'partial']
+        is_paid=False
     ).aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
     context = {
@@ -1000,7 +1000,7 @@ def payment_collection(request, appointment_id):
             )
             
             # Update appointment payment status
-            appointment.payment_status = 'paid'
+            appointment.is_paid = True
             appointment.save()
             
             messages.success(request, f"Payment of ₹{payment_amount} collected successfully!")
