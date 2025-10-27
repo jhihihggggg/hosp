@@ -3,12 +3,82 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
+from django.db.models import Max
 from .models import Appointment, Prescription, Medicine
+from .forms import QuickAppointmentForm
 from patients.models import Patient
+from accounts.models import User
 
 def public_booking(request):
     """Public appointment booking page (no login required)"""
-    return render(request, 'appointments/public_booking.html')
+    if request.method == 'POST':
+        form = QuickAppointmentForm(request.POST)
+        if form.is_valid():
+            try:
+                # Get or create patient
+                phone = form.cleaned_data['phone']
+                patient, created = Patient.objects.get_or_create(
+                    phone=phone,
+                    defaults={
+                        'name': form.cleaned_data['full_name'],
+                        'age': form.cleaned_data['age'],
+                        'gender': form.cleaned_data['gender'],
+                    }
+                )
+                
+                # Update patient info if exists
+                if not created:
+                    patient.name = form.cleaned_data['full_name']
+                    patient.age = form.cleaned_data['age']
+                    patient.gender = form.cleaned_data['gender']
+                    patient.save()
+                
+                # Get doctor
+                doctor = form.cleaned_data['doctor']
+                
+                # Get next serial number for today
+                today = timezone.now().date()
+                last_serial = Appointment.objects.filter(
+                    doctor=doctor,
+                    appointment_date=today
+                ).aggregate(Max('serial_number'))['serial_number__max']
+                
+                next_serial = (last_serial or 0) + 1
+                
+                # Generate appointment number
+                appointment_number = f"APT-{today.strftime('%Y%m%d')}-{doctor.id}-{next_serial:03d}"
+                
+                # Create appointment
+                appointment = Appointment.objects.create(
+                    appointment_number=appointment_number,
+                    patient=patient,
+                    doctor=doctor,
+                    serial_number=next_serial,
+                    appointment_date=today,
+                    status='WAITING',
+                    reason=form.cleaned_data.get('reason', ''),
+                    created_by=None  # Public booking
+                )
+                
+                messages.success(
+                    request,
+                    f'✅ সিরিয়াল নিশ্চিত করা হয়েছে! আপনার সিরিয়াল নম্বর: {next_serial}<br>'
+                    f'Appointment confirmed! Your serial number: {next_serial}<br>'
+                    f'ডাক্তার: {doctor.get_full_name()}<br>'
+                    f'Phone: {phone}'
+                )
+                
+                # Redirect to success or back to form
+                return redirect('appointments:public_booking')
+                
+            except Exception as e:
+                messages.error(request, f'Error: {str(e)}')
+        else:
+            messages.error(request, 'দয়া করে সকল তথ্য সঠিকভাবে পূরণ করুন / Please fill all fields correctly')
+    else:
+        form = QuickAppointmentForm()
+    
+    return render(request, 'appointments/public_booking.html', {'form': form})
 
 @login_required
 def appointment_list(request):
