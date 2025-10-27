@@ -52,7 +52,34 @@
                         {% endfor %}
                         {% endif %}
                         
-                        <form method="post">
+                        <!-- Quick Access Buttons -->
+                        <div class="mb-4">
+                            <p class="text-center mb-2 small text-muted">Quick Login As:</p>
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="fillLogin('admin', 'Admin@123')">
+                                        <i class="bi bi-shield-lock"></i> Admin
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="fillLogin('dr.shakeb.sultana', 'Doctor@123')">
+                                        <i class="bi bi-person-heart"></i> Doctor
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="fillLogin('reception1', 'Reception@123')">
+                                        <i class="bi bi-person-badge"></i> Reception
+                                    </button>
+                                </div>
+                                <div class="col-6">
+                                    <button type="button" class="btn btn-outline-warning btn-sm w-100" onclick="fillLogin('display1', 'Display@123')">
+                                        <i class="bi bi-tv"></i> Display
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form method="post" id="loginForm">
                             {% csrf_token %}
                             <div class="mb-3">
                                 <label for="username" class="form-label">
@@ -87,5 +114,12 @@
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function fillLogin(username, password) {
+            document.getElementById('username').value = username;
+            document.getElementById('password').value = password;
+            document.getElementById('username').focus();
+        }
+    </script>
 </body>
 </html>
