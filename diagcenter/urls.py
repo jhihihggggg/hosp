@@ -22,8 +22,58 @@ from django.conf.urls.static import static
 from django.views.generic import RedirectView
 from accounts import views as account_views
 
+# TEMP: Direct dashboard access for testing (bypass login)
+from django.http import HttpResponse
+from django.shortcuts import render, redirect
+
+def temp_admin_dashboard(request):
+    """Temporary admin dashboard without login"""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    admin_user = User.objects.filter(role='ADMIN').first()
+    if admin_user:
+        from django.contrib.auth import login
+        login(request, admin_user, backend='django.contrib.auth.backends.ModelBackend')
+    return redirect('accounts:admin_dashboard')
+
+def temp_doctor_dashboard(request):
+    """Temporary doctor dashboard without login"""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    doctor_user = User.objects.filter(role='DOCTOR').first()
+    if doctor_user:
+        from django.contrib.auth import login
+        login(request, doctor_user, backend='django.contrib.auth.backends.ModelBackend')
+    return redirect('accounts:doctor_dashboard')
+
+def temp_reception_dashboard(request):
+    """Temporary reception dashboard without login"""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    reception_user = User.objects.filter(role='RECEPTIONIST').first()
+    if reception_user:
+        from django.contrib.auth import login
+        login(request, reception_user, backend='django.contrib.auth.backends.ModelBackend')
+    return redirect('accounts:receptionist_dashboard')
+
+def temp_display_dashboard(request):
+    """Temporary display monitor without login"""
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    display_user = User.objects.filter(role='DISPLAY').first()
+    if display_user:
+        from django.contrib.auth import login
+        login(request, display_user, backend='django.contrib.auth.backends.ModelBackend')
+    return redirect('accounts:display_monitor')
+
 urlpatterns = [
     path("admin/", admin.site.urls),
+    
+    # TEMP: Direct dashboard access (NO LOGIN REQUIRED)
+    path("test-admin/", temp_admin_dashboard, name="test_admin"),
+    path("test-doctor/", temp_doctor_dashboard, name="test_doctor"),
+    path("test-reception/", temp_reception_dashboard, name="test_reception"),
+    path("test-display/", temp_display_dashboard, name="test_display"),
     
     # Public landing page
     path("", account_views.landing_page, name="home"),
