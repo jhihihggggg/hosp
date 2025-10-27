@@ -11,6 +11,13 @@ SERVICE_NAME="nazipuruhs"
 echo "🚀 Quick Deploy from: $APP_DIR"
 echo ""
 
+# Check if venv exists
+if [ ! -d "venv" ]; then
+    echo "❌ Virtual environment not found!"
+    echo "Please run: bash first_time_setup.sh"
+    exit 1
+fi
+
 # Pull latest code
 echo "⬇️  Pulling from GitHub..."
 git fetch --all
