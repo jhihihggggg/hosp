@@ -1,105 +1,71 @@
 """
-Simple test views without authentication
+Test views that look like real dashboards - NO database queries
 """
 from django.shortcuts import render
 from django.http import HttpResponse
 
 def test_admin(request):
-    """Test admin dashboard"""
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Admin Dashboard - Test</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body>
-        <div class="container mt-5">
-            <h1>✅ Admin Dashboard Working!</h1>
-            <p class="lead">You can see the admin dashboard.</p>
-            <hr>
-            <h3>Quick Links:</h3>
-            <a href="/test-doctor/" class="btn btn-success">Go to Doctor Dashboard</a>
-            <a href="/test-reception/" class="btn btn-info">Go to Reception Dashboard</a>
-            <a href="/test-display/" class="btn btn-warning">Go to Display Monitor</a>
-            <a href="/accounts/admin-dashboard/" class="btn btn-primary mt-3">Go to Real Admin Dashboard</a>
-        </div>
-    </body>
-    </html>
-    """
-    return HttpResponse(html)
+    """Full featured test admin dashboard"""
+    context = {
+        'period': 'today',
+        'total_income': 125000,
+        'total_expenses': 45000,
+        'profit': 80000,
+        'profit_margin': 64.0,
+        'appointment_income': 35000,
+        'lab_income': 45000,
+        'pharmacy_income': 30000,
+        'canteen_income': 15000,
+        'total_patients': 450,
+        'new_patients_period': 12,
+        'period_appointments': 28,
+        'completed_appointments': 24,
+        'total_staff': 35,
+        'doctors_count': 8,
+        'nurses_count': 12,
+        'other_staff': 15,
+        'active_investors': 5,
+        'total_investment': 5000000,
+        'outstanding_lab_payments': 12000,
+        'outstanding_pharmacy_payments': 8000,
+        'low_stock_count': 3,
+        'pending_lab_orders': 6,
+    }
+    return render(request, 'accounts/admin_dashboard.html', context)
 
 def test_doctor(request):
-    """Test doctor dashboard"""
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Doctor Dashboard - Test</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body>
-        <div class="container mt-5">
-            <h1>✅ Doctor Dashboard Working!</h1>
-            <p class="lead">You can see the doctor dashboard.</p>
-            <hr>
-            <h3>Quick Links:</h3>
-            <a href="/test-admin/" class="btn btn-primary">Go to Admin Dashboard</a>
-            <a href="/test-reception/" class="btn btn-info">Go to Reception Dashboard</a>
-            <a href="/test-display/" class="btn btn-warning">Go to Display Monitor</a>
-            <a href="/accounts/doctor-dashboard/" class="btn btn-success mt-3">Go to Real Doctor Dashboard</a>
-        </div>
-    </body>
-    </html>
-    """
-    return HttpResponse(html)
+    """Full featured test doctor dashboard"""
+    context = {
+        'today_appointments': 8,
+        'pending_appointments': 3,
+        'completed_today': 5,
+        'total_patients': 120,
+        'upcoming_appointments': [],
+        'recent_prescriptions': [],
+        'doctor': {'first_name': 'Test', 'specialization': 'General Medicine'},
+    }
+    return render(request, 'accounts/doctor_dashboard.html', context)
 
 def test_reception(request):
-    """Test reception dashboard"""
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Reception Dashboard - Test</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body>
-        <div class="container mt-5">
-            <h1>✅ Reception Dashboard Working!</h1>
-            <p class="lead">You can see the reception dashboard.</p>
-            <hr>
-            <h3>Quick Links:</h3>
-            <a href="/test-admin/" class="btn btn-primary">Go to Admin Dashboard</a>
-            <a href="/test-doctor/" class="btn btn-success">Go to Doctor Dashboard</a>
-            <a href="/test-display/" class="btn btn-warning">Go to Display Monitor</a>
-            <a href="/accounts/receptionist-dashboard/" class="btn btn-info mt-3">Go to Real Reception Dashboard</a>
-        </div>
-    </body>
-    </html>
-    """
-    return HttpResponse(html)
+    """Full featured test reception dashboard"""
+    context = {
+        'today_appointments': 15,
+        'pending_appointments': 5,
+        'completed_appointments': 10,
+        'walk_in_patients': 3,
+        'total_patients': 450,
+        'recent_appointments': [],
+        'available_doctors': [],
+    }
+    return render(request, 'accounts/receptionist_dashboard.html', context)
 
 def test_display(request):
-    """Test display monitor"""
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Display Monitor - Test</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    </head>
-    <body>
-        <div class="container mt-5">
-            <h1>✅ Display Monitor Working!</h1>
-            <p class="lead">You can see the display monitor.</p>
-            <hr>
-            <h3>Quick Links:</h3>
-            <a href="/test-admin/" class="btn btn-primary">Go to Admin Dashboard</a>
-            <a href="/test-doctor/" class="btn btn-success">Go to Doctor Dashboard</a>
-            <a href="/test-reception/" class="btn btn-info">Go to Reception Dashboard</a>
-            <a href="/accounts/display-monitor/" class="btn btn-warning mt-3">Go to Real Display Monitor</a>
-        </div>
-    </body>
-    </html>
-    """
-    return HttpResponse(html)
+    """Full featured test display monitor"""
+    context = {
+        'current_serial': 15,
+        'waiting_count': 8,
+        'doctors_available': 4,
+        'appointments': [],
+        'announcements': 'Welcome to Nazipuruhs Hospital',
+    }
+    return render(request, 'accounts/display_monitor.html', context)
