@@ -54,25 +54,28 @@
                         
                         <!-- Quick Access Buttons -->
                         <div class="mb-4">
+                            <div class="alert alert-warning small mb-3">
+                                <i class="bi bi-exclamation-triangle"></i> <strong>Development Mode:</strong> Password not required - just enter username
+                            </div>
                             <p class="text-center mb-2 small text-muted">Quick Login As:</p>
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="fillLogin('admin', 'Admin@123')">
+                                    <button type="button" class="btn btn-outline-primary btn-sm w-100" onclick="fillLogin('admin')">
                                         <i class="bi bi-shield-lock"></i> Admin
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="fillLogin('dr.shakeb.sultana', 'Doctor@123')">
+                                    <button type="button" class="btn btn-outline-success btn-sm w-100" onclick="fillLogin('dr.shakeb.sultana')">
                                         <i class="bi bi-person-heart"></i> Doctor
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="fillLogin('reception1', 'Reception@123')">
+                                    <button type="button" class="btn btn-outline-info btn-sm w-100" onclick="fillLogin('reception1')">
                                         <i class="bi bi-person-badge"></i> Reception
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <button type="button" class="btn btn-outline-warning btn-sm w-100" onclick="fillLogin('display1', 'Display@123')">
+                                    <button type="button" class="btn btn-outline-warning btn-sm w-100" onclick="fillLogin('display1')">
                                         <i class="bi bi-tv"></i> Display
                                     </button>
                                 </div>
@@ -89,9 +92,9 @@
                             </div>
                             <div class="mb-3">
                                 <label for="password" class="form-label">
-                                    <i class="bi bi-lock"></i> Password
+                                    <i class="bi bi-lock"></i> Password (optional in dev mode)
                                 </label>
-                                <input type="password" class="form-control" id="password" name="password" required>
+                                <input type="password" class="form-control" id="password" name="password">
                             </div>
                             <div class="mb-3 form-check">
                                 <input type="checkbox" class="form-check-input" id="remember">
@@ -115,10 +118,10 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function fillLogin(username, password) {
+        function fillLogin(username) {
             document.getElementById('username').value = username;
-            document.getElementById('password').value = password;
-            document.getElementById('username').focus();
+            document.getElementById('password').value = '';
+            document.getElementById('loginForm').submit();
         }
     </script>
 </body>
