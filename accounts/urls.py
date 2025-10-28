@@ -11,12 +11,12 @@ urlpatterns = [
     path('doctor-dashboard/', views.doctor_dashboard, name='doctor_dashboard'),
     path('receptionist-dashboard/', views.receptionist_dashboard, name='receptionist_dashboard'),
     
-    # Reception Features
-    path('reception/register-patient/', views.reception_register_patient, name='reception_register_patient'),
-    path('reception/billing/', views.reception_billing, name='reception_billing'),
-    path('reception/voucher/<int:appointment_id>/', views.reception_print_voucher, name='reception_print_voucher'),
-    path('reception/prescription/<int:prescription_id>/', views.reception_print_prescription, name='reception_print_prescription'),
-    path('reception/doctor-serials/<int:doctor_id>/', views.reception_doctor_serials, name='reception_doctor_serials'),
+    # Reception Features - TODO: implement these views
+    # path('reception/register-patient/', views.reception_register_patient, name='reception_register_patient'),
+    # path('reception/billing/', views.reception_billing, name='reception_billing'),
+    # path('reception/voucher/<int:appointment_id>/', views.reception_print_voucher, name='reception_print_voucher'),
+    # path('reception/prescription/<int:prescription_id>/', views.reception_print_prescription, name='reception_print_prescription'),
+    # path('reception/doctor-serials/<int:doctor_id>/', views.reception_doctor_serials, name='reception_doctor_serials'),
     
     path('lab-dashboard/', views.lab_dashboard, name='lab_dashboard'),
     path('pharmacy-dashboard/', views.pharmacy_dashboard, name='pharmacy_dashboard'),
