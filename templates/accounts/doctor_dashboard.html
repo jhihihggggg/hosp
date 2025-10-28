@@ -82,9 +82,22 @@
                                 <i class="bi bi-megaphone"></i> Call Next
                             </a>
                             {% elif appointment.status == 'CALLED' or appointment.status == 'IN_PROGRESS' %}
-                            <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-sm btn-success">
-                                <i class="bi bi-clipboard-pulse"></i> Start Consultation
+                            <a href="{% url 'appointments:appointment_detail' appointment.pk %}" class="btn btn-sm btn-success me-1">
+                                <i class="bi bi-clipboard-pulse"></i> View
                             </a>
+                            <a href="{% url 'appointments:prescription_create' appointment.pk %}" class="btn btn-sm btn-primary">
+                                <i class="bi bi-file-text"></i> Prescription
+                            </a>
+                            {% elif appointment.status == 'COMPLETED' %}
+                            {% if appointment.prescriptions.exists %}
+                            <a href="{% url 'appointments:prescription_print' appointment.prescriptions.first.pk %}" class="btn btn-sm btn-success" target="_blank">
+                                <i class="bi bi-printer"></i> Print
+                            </a>
+                            {% else %}
+                            <a href="{% url 'appointments:prescription_create' appointment.pk %}" class="btn btn-sm btn-warning">
+                                <i class="bi bi-file-text"></i> Write Rx
+                            </a>
+                            {% endif %}
                             {% endif %}
                         </td>
                     </tr>

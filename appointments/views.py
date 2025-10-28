@@ -137,13 +137,97 @@ def display_monitor(request):
 
 @login_required
 def prescription_create(request, appointment_id):
-    """Create prescription"""
+    """Create or edit prescription - Doctors can write prescriptions"""
+    from .forms import PrescriptionForm, MedicineFormSet
+    from datetime import datetime
+    
     appointment = get_object_or_404(Appointment, pk=appointment_id)
-    if request.method == 'POST':
-        # TODO: Implement form handling
-        messages.success(request, 'Prescription created successfully!')
+    
+    # Check if prescription already exists
+    try:
+        prescription = Prescription.objects.get(appointment=appointment)
+        is_edit = True
+    except Prescription.DoesNotExist:
+        prescription = None
+        is_edit = False
+    
+    # Only doctor or admin can write prescriptions
+    if not (request.user.is_doctor or request.user.is_admin):
+        messages.error(request, 'Only doctors can write prescriptions!')
         return redirect('appointments:appointment_detail', pk=appointment_id)
-    return render(request, 'appointments/prescription_create.html', {'appointment': appointment})
+    
+    if request.method == 'POST':
+        if prescription:
+            # Edit existing prescription
+            form = PrescriptionForm(request.POST, instance=prescription)
+        else:
+            # Create new prescription
+            form = PrescriptionForm(request.POST)
+        
+        formset = MedicineFormSet(request.POST, instance=prescription if prescription else None)
+        
+        if form.is_valid() and formset.is_valid():
+            # Save prescription
+            prescription = form.save(commit=False)
+            prescription.appointment = appointment
+            prescription.patient = appointment.patient
+            prescription.doctor = request.user
+            
+            # Generate prescription number if new
+            if not prescription.prescription_number:
+                today = datetime.now()
+                prefix = f"RX{today.strftime('%Y%m%d')}"
+                last_prescription = Prescription.objects.filter(
+                    prescription_number__startswith=prefix
+                ).order_by('prescription_number').last()
+                
+                if last_prescription:
+                    last_number = int(last_prescription.prescription_number[-4:])
+                    new_number = last_number + 1
+                else:
+                    new_number = 1
+                
+                prescription.prescription_number = f"{prefix}{new_number:04d}"
+            
+            prescription.save()
+            
+            # Save medicines
+            medicines = formset.save(commit=False)
+            for medicine in medicines:
+                medicine.prescription = prescription
+                medicine.save()
+            
+            # Delete removed medicines
+            for obj in formset.deleted_objects:
+                obj.delete()
+            
+            messages.success(request, 'Prescription saved successfully! You can now print it.')
+            return redirect('appointments:prescription_detail', pk=prescription.pk)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        if prescription:
+            form = PrescriptionForm(instance=prescription)
+            formset = MedicineFormSet(instance=prescription)
+        else:
+            form = PrescriptionForm()
+            formset = MedicineFormSet()
+    
+    # Get previous prescriptions for reference
+    previous_prescriptions = Prescription.objects.filter(
+        patient=appointment.patient
+    ).exclude(pk=prescription.pk if prescription else None).order_by('-created_at')[:5]
+    
+    context = {
+        'appointment': appointment,
+        'prescription': prescription,
+        'form': form,
+        'formset': formset,
+        'is_edit': is_edit,
+        'previous_prescriptions': previous_prescriptions,
+    }
+    
+    return render(request, 'appointments/prescription_form.html', context)
 
 @login_required
 def prescription_detail(request, pk):

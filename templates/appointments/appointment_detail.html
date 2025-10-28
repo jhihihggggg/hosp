@@ -6,17 +6,26 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-calendar-check"></i> Appointment Details</h2>
     <div>
+        {% if user.is_doctor or user.is_admin %}
+            {% if appointment.prescriptions.exists %}
+            <a href="{% url 'appointments:prescription_create' appointment.pk %}" class="btn btn-warning me-2">
+                <i class="bi bi-pencil-square"></i> Edit Prescription
+            </a>
+            <a href="{% url 'appointments:prescription_print' appointment.prescriptions.first.pk %}" class="btn btn-success me-2" target="_blank">
+                <i class="bi bi-printer-fill"></i> Print Prescription
+            </a>
+            {% else %}
+            <a href="{% url 'appointments:prescription_create' appointment.pk %}" class="btn btn-primary me-2">
+                <i class="bi bi-file-text-fill"></i> Write Prescription
+            </a>
+            {% endif %}
+        {% endif %}
         {% if appointment.status == 'waiting' %}
-        <a href="{% url 'appointments:appointment_edit' appointment.pk %}" class="btn btn-primary">
+        <a href="{% url 'appointments:appointment_edit' appointment.pk %}" class="btn btn-secondary me-2">
             <i class="bi bi-pencil"></i> Edit
         </a>
         {% endif %}
-        {% if appointment.status == 'completed' and not appointment.prescriptions.exists %}
-        <a href="{% url 'appointments:prescription_create' %}?appointment={{ appointment.pk }}" class="btn btn-success">
-            <i class="bi bi-file-text"></i> Write Prescription
-        </a>
-        {% endif %}
-        <a href="{% url 'appointments:appointment_list' %}" class="btn btn-secondary">
+        <a href="{% url 'appointments:appointment_list' %}" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left"></i> Back
         </a>
     </div>
