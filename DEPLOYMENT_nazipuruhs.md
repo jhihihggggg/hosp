@@ -8,7 +8,7 @@ Complete deployment guide for the hospital management system on **nazipuruhs.com
 
 - **Domain**: nazipuruhs.com
 - **Port**: 8005
-- **Directory**: /var/www/nazipuruhs
+- **Directory**: /var/www/hosp
 - **Service**: nazipuruhs.service
 - **Other Apps on VPS**: madrasha, saro (running on other ports)
 
@@ -28,7 +28,7 @@ chmod +x push_to_vps.sh
 
 ```bash
 ssh root@nazipuruhs.com
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 bash pull_from_repo.sh
 ```
 
@@ -59,8 +59,8 @@ certbot --nginx -d nazipuruhs.com -d www.nazipuruhs.com
 ### Step 2: Create Project Directory
 
 ```bash
-mkdir -p /var/www/nazipuruhs
-cd /var/www/nazipuruhs
+mkdir -p /var/www/hosp
+cd /var/www/hosp
 ```
 
 ### Step 3: Upload Initial Code
@@ -75,7 +75,7 @@ cd /workspaces/hosp
 
 **On VPS:**
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 tar -xzf /tmp/hospital_deploy.tar.gz
 
 # Create virtual environment
@@ -97,7 +97,7 @@ The production settings are already in `diagcenter/production_settings.py` with:
 ### Step 6: Setup Database
 
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 
 # Run migrations
@@ -114,7 +114,7 @@ python manage.py collectstatic --noinput --settings=diagcenter.production_settin
 
 ```bash
 # Copy service file
-cp /var/www/nazipuruhs/hosp.service /etc/systemd/system/nazipuruhs.service
+cp /var/www/hosp/hosp.service /etc/systemd/system/nazipuruhs.service
 
 # Enable and start
 systemctl daemon-reload
@@ -126,7 +126,7 @@ systemctl start nazipuruhs
 
 ```bash
 # Copy nginx config
-cp /var/www/nazipuruhs/nginx_nazipuruhs.conf /etc/nginx/sites-available/nazipuruhs
+cp /var/www/hosp/nginx_nazipuruhs.conf /etc/nginx/sites-available/nazipuruhs
 
 # Enable site
 ln -s /etc/nginx/sites-available/nazipuruhs /etc/nginx/sites-enabled/
@@ -146,8 +146,8 @@ chown www-data:www-data /var/log/nazipuruhs
 ### Step 10: Set Permissions
 
 ```bash
-chown -R www-data:www-data /var/www/nazipuruhs
-chmod -R 755 /var/www/nazipuruhs
+chown -R www-data:www-data /var/www/hosp
+chmod -R 755 /var/www/hosp
 ```
 
 ---
@@ -165,7 +165,7 @@ cd /workspaces/hosp
 
 ```bash
 ssh root@nazipuruhs.com
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 bash pull_from_repo.sh
 ```
 
@@ -220,8 +220,8 @@ journalctl -u nazipuruhs -xe
 netstat -tulpn | grep 8005
 
 # Check permissions
-ls -la /var/www/nazipuruhs
-chown -R www-data:www-data /var/www/nazipuruhs
+ls -la /var/www/hosp
+chown -R www-data:www-data /var/www/hosp
 
 # Restart
 systemctl restart nazipuruhs
@@ -244,16 +244,16 @@ systemctl reload nginx
 ### Static Files Not Loading
 
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py collectstatic --noinput --settings=diagcenter.production_settings
-chown -R www-data:www-data /var/www/nazipuruhs/staticfiles
+chown -R www-data:www-data /var/www/hosp/staticfiles
 ```
 
 ### Database Issues
 
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 
 # Check migrations
@@ -298,7 +298,7 @@ htop
 
 # Disk usage
 df -h
-du -sh /var/www/nazipuruhs
+du -sh /var/www/hosp
 
 # Service resource usage
 systemctl status nazipuruhs
@@ -322,7 +322,7 @@ sudo -u postgres psql
 
 ```bash
 # SQLite
-cp /var/www/nazipuruhs/db.sqlite3 /root/backups/db_$(date +%Y%m%d).sqlite3
+cp /var/www/hosp/db.sqlite3 /root/backups/db_$(date +%Y%m%d).sqlite3
 
 # PostgreSQL
 sudo -u postgres pg_dump nazipuruhs_db > /root/backups/db_$(date +%Y%m%d).sql
@@ -331,7 +331,7 @@ sudo -u postgres pg_dump nazipuruhs_db > /root/backups/db_$(date +%Y%m%d).sql
 ### Backup Media Files
 
 ```bash
-tar -czf /root/backups/media_$(date +%Y%m%d).tar.gz /var/www/nazipuruhs/media/
+tar -czf /root/backups/media_$(date +%Y%m%d).tar.gz /var/www/hosp/media/
 ```
 
 ### Full Backup
@@ -341,7 +341,7 @@ tar -czf /root/backups/nazipuruhs_full_$(date +%Y%m%d).tar.gz \
   --exclude='*.pyc' \
   --exclude='__pycache__' \
   --exclude='venv' \
-  /var/www/nazipuruhs
+  /var/www/hosp
 ```
 
 ### Restore from Backup
@@ -372,7 +372,7 @@ systemctl enable nazipuruhs     # Enable on boot
 ### Django Management
 
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 
 # All commands need --settings flag

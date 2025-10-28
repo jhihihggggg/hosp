@@ -19,12 +19,13 @@ ssh root@YOUR_VPS_IP
 
 ### Step 2️⃣: Pull Latest Code
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 git pull origin main
 ```
 
 ### Step 3️⃣: Run Setup Script
 ```bash
+cd /var/www/hosp
 chmod +x vps_setup_complete.sh
 sudo ./vps_setup_complete.sh
 ```
@@ -89,7 +90,7 @@ git push origin main
 
 **On your VPS:**
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 chmod +x vps_update.sh
 sudo ./vps_update.sh
 ```
@@ -134,7 +135,7 @@ sudo systemctl restart nazipuruhs
 
 ### Recreate Users (if somehow deleted)
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py shell < create_production_accounts.py
 ```
@@ -213,7 +214,7 @@ sudo systemctl start nazipuruhs
 
 ### "Static files not loading"
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py collectstatic --noinput
 sudo systemctl restart nazipuruhs
@@ -222,7 +223,7 @@ sudo systemctl restart nazipuruhs
 ### "Can't login"
 ```bash
 # Recreate users
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py shell < create_production_accounts.py
 ```

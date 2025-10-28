@@ -7,7 +7,7 @@
 ✅ Changes pushed to GitHub successfully!
 
 🔧 WHAT WAS FIXED:
-   1. ✓ Corrected nginx paths (/var/www/hosp → /var/www/nazipuruhs)
+   1. ✓ Corrected nginx paths (/var/www/hosp → /var/www/hosp)
    2. ✓ Created diagnostic script (diagnose_vps.sh)
    3. ✓ Created automatic fix script (fix_vps.sh)
    4. ✓ Added comprehensive troubleshooting guide
@@ -25,7 +25,7 @@
 ┌────────────────────────────────────────────────────────────────┐
 │ STEP 2: Navigate to Project and Pull Updates                   │
 └────────────────────────────────────────────────────────────────┘
-   cd /var/www/nazipuruhs
+   cd /var/www/hosp
    git pull origin main
 
 
@@ -81,10 +81,10 @@
           sudo systemctl reload nginx
 
    Issue: Permission errors
-   Fix:   sudo chown -R www-data:www-data /var/www/nazipuruhs
+   Fix:   sudo chown -R www-data:www-data /var/www/hosp
 
    Issue: Database errors
-   Fix:   cd /var/www/nazipuruhs
+   Fix:   cd /var/www/hosp
           source venv/bin/activate
           python manage.py migrate --settings=diagcenter.production_settings
 

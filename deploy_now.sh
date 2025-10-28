@@ -40,7 +40,7 @@ read -p "Press Enter to continue or Ctrl+C to cancel..."
 # Configuration
 VPS="nazipuruhs.com"
 VPS_USER="root"
-VPS_PATH="/var/www/nazipuruhs"
+VPS_PATH="/var/www/hosp"
 BRANCH="main"
 
 # Check if Git remote exists

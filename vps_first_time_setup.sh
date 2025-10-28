@@ -26,7 +26,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # Configuration
-PROJECT_DIR="/var/www/nazipuruhs"
+PROJECT_DIR="/var/www/hosp"
 SERVICE_NAME="nazipuruhs"
 BRANCH="main"
 

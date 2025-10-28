@@ -4,7 +4,7 @@
 
 Domain: nazipuruhs.com
 Port: 8005
-Path: /var/www/nazipuruhs
+Path: /var/www/hosp
 
 ═══════════════════════════════════════════════════════════════
 🚀 DEPLOY IN 1 COMMAND
@@ -35,7 +35,7 @@ STEP 1: Push from Local
 STEP 2: Deploy on VPS
 ────────────────────────
     ssh root@nazipuruhs.com
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     bash pull_from_repo.sh
 
 
@@ -45,8 +45,8 @@ STEP 2: Deploy on VPS
 
 1. Create Directory
 ────────────────────────
-    mkdir -p /var/www/nazipuruhs
-    cd /var/www/nazipuruhs
+    mkdir -p /var/www/hosp
+    cd /var/www/hosp
 
 
 2. Upload Files
@@ -57,7 +57,7 @@ STEP 2: Deploy on VPS
 
 3. Extract and Setup
 ────────────────────────
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     tar -xzf /tmp/hospital_deploy.tar.gz
     
     python3 -m venv venv
@@ -102,8 +102,8 @@ STEP 2: Deploy on VPS
 
 7. Set Permissions
 ────────────────────────
-    chown -R www-data:www-data /var/www/nazipuruhs
-    chmod -R 755 /var/www/nazipuruhs
+    chown -R www-data:www-data /var/www/hosp
+    chmod -R 755 /var/www/hosp
 
 
 8. Install SSL Certificate (Optional but Recommended)
@@ -146,7 +146,7 @@ Reload Nginx:
     systemctl reload nginx
 
 Django Shell:
-    cd /var/www/nazipuruhs && source venv/bin/activate
+    cd /var/www/hosp && source venv/bin/activate
     python manage.py shell --settings=diagcenter.production_settings
 
 
@@ -156,7 +156,7 @@ Django Shell:
 
 Service Won't Start:
     journalctl -u nazipuruhs -xe
-    chown -R www-data:www-data /var/www/nazipuruhs
+    chown -R www-data:www-data /var/www/hosp
 
 Port Conflict:
     netstat -tulpn | grep 8005
@@ -168,7 +168,7 @@ Port Conflict:
 
 Static Files Not Loading:
     python manage.py collectstatic --settings=diagcenter.production_settings
-    chown -R www-data:www-data /var/www/nazipuruhs/staticfiles
+    chown -R www-data:www-data /var/www/hosp/staticfiles
 
 
 ═══════════════════════════════════════════════════════════════
@@ -201,11 +201,11 @@ Port:        8005
 ═══════════════════════════════════════════════════════════════
 
 Database:
-    cp /var/www/nazipuruhs/db.sqlite3 /root/backups/
+    cp /var/www/hosp/db.sqlite3 /root/backups/
 
 Full Backup:
     tar -czf /root/backups/nazipuruhs_$(date +%Y%m%d).tar.gz \
-        /var/www/nazipuruhs
+        /var/www/hosp
 
 
 ═══════════════════════════════════════════════════════════════

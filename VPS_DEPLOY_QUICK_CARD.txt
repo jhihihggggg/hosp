@@ -16,7 +16,7 @@
 │ STEP 2: Go to Project Directory & Pull Latest Code            │
 └────────────────────────────────────────────────────────────────┘
 
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     git pull origin main
 
 
@@ -78,7 +78,7 @@
 
 2. Update on VPS:
    
-   cd /var/www/nazipuruhs
+   cd /var/www/hosp
    chmod +x vps_update.sh
    sudo ./vps_update.sh
 
@@ -101,7 +101,7 @@ Check Nginx:
     sudo tail -f /var/log/nginx/error.log
 
 Recreate Users (if login issues):
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     source venv/bin/activate
     python manage.py shell < create_production_accounts.py
 

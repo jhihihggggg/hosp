@@ -11,8 +11,8 @@ echo "=============================================================="
 echo "🔄 UPDATING NAZIPURUHS HOSPITAL SYSTEM"
 echo "=============================================================="
 
-PROJECT_DIR="/var/www/nazipuruhs"
-PROJECT_NAME="nazipuruhs"
+PROJECT_DIR="/var/www/hosp"
+PROJECT_NAME="hosp"
 
 cd $PROJECT_DIR
 

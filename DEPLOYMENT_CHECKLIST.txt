@@ -35,7 +35,7 @@ On Local Machine:
 
 On VPS:
 [ ] SSH: ssh root@nazipuruhs.com
-[ ] Run: cd /var/www/nazipuruhs
+[ ] Run: cd /var/www/hosp
 [ ] Run: bash pull_from_repo.sh
 [ ] Verify service started
 
@@ -65,7 +65,7 @@ BROWSER TESTS:
 ═══════════════════════════════════════════════════════════════════
 
 [ ] Create superuser:
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     source venv/bin/activate
     python manage.py createsuperuser --settings=diagcenter.production_settings
 
@@ -82,7 +82,7 @@ BROWSER TESTS:
 
 [ ] Set up automatic backups:
     # Add to crontab:
-    0 2 * * * cp /var/www/nazipuruhs/db.sqlite3 /root/backups/db_$(date +\%Y\%m\%d).sqlite3
+    0 2 * * * cp /var/www/hosp/db.sqlite3 /root/backups/db_$(date +\%Y\%m\%d).sqlite3
 
 ═══════════════════════════════════════════════════════════════════
 🔧 CONFIGURATION VERIFICATION
@@ -99,7 +99,7 @@ BROWSER TESTS:
 
 [ ] Service name 'nazipuruhs' used consistently ✓
 
-[ ] Directory /var/www/nazipuruhs used everywhere ✓
+[ ] Directory /var/www/hosp used everywhere ✓
 
 ═══════════════════════════════════════════════════════════════════
 🐛 TROUBLESHOOTING CHECKLIST
@@ -108,8 +108,8 @@ BROWSER TESTS:
 IF SERVICE WON'T START:
 ───────────────────────────────────
 [ ] Check logs: journalctl -u nazipuruhs -xe
-[ ] Check permissions: ls -la /var/www/nazipuruhs
-[ ] Fix permissions: chown -R www-data:www-data /var/www/nazipuruhs
+[ ] Check permissions: ls -la /var/www/hosp
+[ ] Fix permissions: chown -R www-data:www-data /var/www/hosp
 [ ] Check Python path: which python (inside venv)
 [ ] Check port availability: netstat -tulpn | grep 8005
 
@@ -123,15 +123,15 @@ IF 502 BAD GATEWAY:
 IF STATIC FILES NOT LOADING:
 ───────────────────────────────────
 [ ] Collect static: python manage.py collectstatic --settings=diagcenter.production_settings
-[ ] Check permissions: ls -la /var/www/nazipuruhs/staticfiles
-[ ] Fix permissions: chown -R www-data:www-data /var/www/nazipuruhs/staticfiles
+[ ] Check permissions: ls -la /var/www/hosp/staticfiles
+[ ] Fix permissions: chown -R www-data:www-data /var/www/hosp/staticfiles
 [ ] Check nginx config: nginx -t
 
 IF DATABASE ERRORS:
 ───────────────────────────────────
 [ ] Run migrations: python manage.py migrate --settings=diagcenter.production_settings
-[ ] Check database file: ls -la /var/www/nazipuruhs/*.db
-[ ] Fix permissions: chown www-data:www-data /var/www/nazipuruhs/*.db
+[ ] Check database file: ls -la /var/www/hosp/*.db
+[ ] Fix permissions: chown www-data:www-data /var/www/hosp/*.db
 
 ═══════════════════════════════════════════════════════════════════
 📊 MONITORING CHECKLIST

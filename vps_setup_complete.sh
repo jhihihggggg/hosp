@@ -19,8 +19,8 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-PROJECT_DIR="/var/www/nazipuruhs"
-PROJECT_NAME="nazipuruhs"
+PROJECT_DIR="/var/www/hosp"
+PROJECT_NAME="hosp"
 PORT=8005
 DOMAIN="nazipuruhs.com"
 

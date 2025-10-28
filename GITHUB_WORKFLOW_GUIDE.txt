@@ -78,7 +78,7 @@ LOCAL:
 
 VPS:
   ssh root@nazipuruhs.com
-  cd /var/www/nazipuruhs
+  cd /var/www/hosp
   bash pull_from_repo.sh
 
 
@@ -91,7 +91,7 @@ LOCAL:
 
 VPS:
   ssh root@nazipuruhs.com
-  cd /var/www/nazipuruhs
+  cd /var/www/hosp
   git pull origin main
   source venv/bin/activate
   python manage.py migrate --settings=diagcenter.production_settings
@@ -123,7 +123,7 @@ VPS:
         │                                        git pull
         │                                              │
         │                                              ▼
-        │                                     /var/www/nazipuruhs
+        │                                     /var/www/hosp
         │                                              │
         │                                              │
         │                                       Deploy & Restart
@@ -164,7 +164,7 @@ Or Manual:
 ─────────────
 ./push_to_vps.sh                    # On local
 ssh root@nazipuruhs.com
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 bash pull_from_repo.sh              # On VPS
 
 Check Status (VPS):

@@ -14,13 +14,13 @@ git push origin main
 ssh root@your-vps-ip
 
 # Pull latest code (repository already exists)
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 git pull origin main
 ```
 
 ### Step 3: Run Setup Script
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 chmod +x vps_setup_complete.sh
 ./vps_setup_complete.sh
 ```
@@ -75,7 +75,7 @@ sudo apt-get install -y python3 python3-pip python3-venv nginx postgresql redis-
 
 ### 2. Create Virtual Environment
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 python3 -m venv venv
 source venv/bin/activate
 ```
@@ -134,11 +134,11 @@ server {
     }
     
     location /static/ {
-        alias /var/www/nazipuruhs/staticfiles/;
+        alias /var/www/hosp/staticfiles/;
     }
     
     location /media/ {
-        alias /var/www/nazipuruhs/media/;
+        alias /var/www/hosp/media/;
     }
 }
 ```
@@ -165,9 +165,9 @@ After=network.target
 Type=notify
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/nazipuruhs
-Environment="PATH=/var/www/nazipuruhs/venv/bin"
-ExecStart=/var/www/nazipuruhs/venv/bin/gunicorn diagcenter.asgi:application \
+WorkingDirectory=/var/www/hosp
+Environment="PATH=/var/www/hosp/venv/bin"
+ExecStart=/var/www/hosp/venv/bin/gunicorn diagcenter.asgi:application \
     -k uvicorn.workers.UvicornWorker \
     -b 0.0.0.0:8005 \
     --workers 4 \
@@ -206,7 +206,7 @@ sudo tail -f /var/log/nginx/access.log
 
 ### Test Database Connection
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py dbshell
 ```
@@ -218,8 +218,8 @@ python manage.py shell < create_production_accounts.py
 
 ### Check Permissions
 ```bash
-sudo chown -R www-data:www-data /var/www/nazipuruhs
-sudo chmod -R 755 /var/www/nazipuruhs
+sudo chown -R www-data:www-data /var/www/hosp
+sudo chmod -R 755 /var/www/hosp
 ```
 
 ---
@@ -235,7 +235,7 @@ git commit -m "Your changes"
 git push origin main
 
 # On VPS
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 git pull origin main
 source venv/bin/activate
 pip install -r requirements.txt

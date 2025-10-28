@@ -4,7 +4,7 @@
 ║                                                                  ║
 ║                  Domain: nazipuruhs.com                          ║
 ║                  Port: 8005                                      ║
-║                  Path: /var/www/nazipuruhs                       ║
+║                  Path: /var/www/hosp                       ║
 ║                                                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 
@@ -16,7 +16,7 @@ All files have been configured for:
   ✓ Domain: nazipuruhs.com
   ✓ Port: 8005 (won't conflict with other apps)
   ✓ Service name: nazipuruhs
-  ✓ Directory: /var/www/nazipuruhs
+  ✓ Directory: /var/www/hosp
 
 ═══════════════════════════════════════════════════════════════════
 
@@ -58,7 +58,7 @@ On Local:
 
 On VPS:
     ssh root@nazipuruhs.com
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     bash pull_from_repo.sh
 
 
@@ -69,7 +69,7 @@ If you have GitHub set up:
 
 On VPS:
     ssh root@nazipuruhs.com
-    cd /var/www/nazipuruhs
+    cd /var/www/hosp
     git pull
     bash pull_from_repo.sh
 
@@ -110,7 +110,7 @@ Access Website:
    https://nazipuruhs.com
 
 4. Create superuser (if first time):
-   cd /var/www/nazipuruhs
+   cd /var/www/hosp
    source venv/bin/activate
    python manage.py createsuperuser --settings=diagcenter.production_settings
 
@@ -125,7 +125,7 @@ If port conflict:
     netstat -tulpn | grep 8005
 
 If permission error:
-    chown -R www-data:www-data /var/www/nazipuruhs
+    chown -R www-data:www-data /var/www/hosp
 
 ═══════════════════════════════════════════════════════════════════
 

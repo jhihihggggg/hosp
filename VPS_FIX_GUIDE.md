@@ -22,7 +22,7 @@ ssh your_username@nazipuruhs.com
 
 ### Step 3: Run Diagnostic (On VPS)
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 git pull origin main
 sudo bash diagnose_vps.sh > diagnostic_output.txt
 cat diagnostic_output.txt
@@ -64,7 +64,7 @@ sudo systemctl reload nginx
 ### Issue 1: "Module not found" errors
 **Fix:**
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 pip install -r requirements.txt
 sudo systemctl restart nazipuruhs
@@ -73,7 +73,7 @@ sudo systemctl restart nazipuruhs
 ### Issue 2: Database errors
 **Fix:**
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py migrate --settings=diagcenter.production_settings
 sudo systemctl restart nazipuruhs
@@ -82,7 +82,7 @@ sudo systemctl restart nazipuruhs
 ### Issue 3: Static files not loading
 **Fix:**
 ```bash
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 python manage.py collectstatic --noinput --settings=diagcenter.production_settings
 sudo systemctl restart nazipuruhs
@@ -91,8 +91,8 @@ sudo systemctl restart nazipuruhs
 ### Issue 4: Permission denied errors
 **Fix:**
 ```bash
-sudo chown -R www-data:www-data /var/www/nazipuruhs
-sudo chmod -R 755 /var/www/nazipuruhs
+sudo chown -R www-data:www-data /var/www/hosp
+sudo chmod -R 755 /var/www/hosp
 sudo systemctl restart nazipuruhs
 ```
 
@@ -122,7 +122,7 @@ sudo lsof -i :8005
 sudo journalctl -u nazipuruhs -n 100 --no-pager
 
 # Try running manually to see error
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 source venv/bin/activate
 gunicorn --bind 0.0.0.0:8005 diagcenter.wsgi:application
 ```
@@ -143,7 +143,7 @@ Make sure your production settings have:
 - [ ] DEBUG = False
 - [ ] Correct ALLOWED_HOSTS (nazipuruhs.com, www.nazipuruhs.com, VPS IP)
 - [ ] Correct STATIC_ROOT and MEDIA_ROOT paths
-- [ ] Database path exists: /var/www/nazipuruhs/data/db_production.sqlite3
+- [ ] Database path exists: /var/www/hosp/data/db_production.sqlite3
 
 ## If All Else Fails - Complete Reinstall
 
@@ -152,7 +152,7 @@ Make sure your production settings have:
 sudo systemctl stop nazipuruhs
 sudo systemctl disable nazipuruhs
 sudo rm /etc/systemd/system/nazipuruhs.service
-sudo rm -rf /var/www/nazipuruhs
+sudo rm -rf /var/www/hosp
 
 # Clone fresh
 cd /var/www

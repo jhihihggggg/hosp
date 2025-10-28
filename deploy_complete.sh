@@ -12,7 +12,7 @@ echo "================================"
 # Configuration
 VPS_HOST="nazipuruhs.com"  # Change this to your VPS IP or hostname
 VPS_USER="root"            # Change if using different user
-APP_DIR="/var/www/nazipuruhs"
+APP_DIR="/var/www/hosp"
 
 echo ""
 echo "📋 Deployment Steps:"
@@ -37,7 +37,7 @@ echo "================================"
 
 # Step 2: SSH to VPS and deploy
 ssh $VPS_USER@$VPS_HOST << 'ENDSSH'
-cd /var/www/nazipuruhs
+cd /var/www/hosp
 bash pull_on_vps.sh
 ENDSSH
 
