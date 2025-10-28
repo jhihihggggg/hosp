@@ -13,10 +13,7 @@ git push origin main
 # SSH to your VPS
 ssh root@your-vps-ip
 
-# Clone or pull the repository
-cd /var/www
-git clone https://github.com/jhihihggggg/hosp.git nazipuruhs
-# OR if already cloned:
+# Pull latest code (repository already exists)
 cd /var/www/nazipuruhs
 git pull origin main
 ```

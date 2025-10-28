@@ -13,12 +13,11 @@
 
 
 ┌────────────────────────────────────────────────────────────────┐
-│ STEP 2: Clone the Repository                                  │
+│ STEP 2: Go to Project Directory & Pull Latest Code            │
 └────────────────────────────────────────────────────────────────┘
 
-    cd /var/www
-    git clone https://github.com/jhihihggggg/hosp.git nazipuruhs
-    cd nazipuruhs
+    cd /var/www/nazipuruhs
+    git pull origin main
 
 
 ┌────────────────────────────────────────────────────────────────┐

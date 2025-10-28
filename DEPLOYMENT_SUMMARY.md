@@ -17,11 +17,10 @@ All code has been pushed to GitHub with:
 ssh root@YOUR_VPS_IP
 ```
 
-### Step 2️⃣: Clone Repository
+### Step 2️⃣: Pull Latest Code
 ```bash
-cd /var/www
-git clone https://github.com/jhihihggggg/hosp.git nazipuruhs
-cd nazipuruhs
+cd /var/www/nazipuruhs
+git pull origin main
 ```
 
 ### Step 3️⃣: Run Setup Script
