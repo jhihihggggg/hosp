@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Billing & Payment{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="bi bi-cash-coin"></i> Billing & Payment Collection</h2>
+                <a href="{% url 'accounts:receptionist_dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unpaid Appointments -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle-fill"></i> Unpaid Appointments</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Serial</th>
+                                    <th>Patient</th>
+                                    <th>Phone</th>
+                                    <th>Doctor</th>
+                                    <th>Consultation Fee</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for appt in unpaid_appointments %}
+                                <tr>
+                                    <td><strong class="text-primary">#{{ appt.serial_number }}</strong></td>
+                                    <td>{{ appt.patient.get_full_name }}</td>
+                                    <td>{{ appt.patient.phone }}</td>
+                                    <td>Dr. {{ appt.doctor.get_full_name }}</td>
+                                    <td><strong>৳{{ appt.consultation_fee }}</strong></td>
+                                    <td>
+                                        <button type="button" class="btn btn-success btn-sm" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#paymentModal{{ appt.id }}">
+                                            <i class="bi bi-cash-stack"></i> Collect Payment
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Payment Modal -->
+                                <div class="modal fade" id="paymentModal{{ appt.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-success text-white">
+                                                <h5 class="modal-title">Collect Payment</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="appointment_id" value="{{ appt.id }}">
+                                                    
+                                                    <div class="alert alert-info">
+                                                        <strong>Patient:</strong> {{ appt.patient.get_full_name }}<br>
+                                                        <strong>Serial:</strong> #{{ appt.serial_number }}<br>
+                                                        <strong>Doctor:</strong> Dr. {{ appt.doctor.get_full_name }}
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Amount (৳)</label>
+                                                        <input type="number" name="amount" class="form-control form-control-lg" 
+                                                               value="{{ appt.consultation_fee }}" required>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Payment Method</label>
+                                                        <select name="payment_method" class="form-select">
+                                                            <option value="CASH">Cash</option>
+                                                            <option value="CARD">Card</option>
+                                                            <option value="MOBILE_BANKING">Mobile Banking</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="bi bi-check-circle"></i> Confirm Payment
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        <i class="bi bi-check-circle fs-1 d-block mb-2"></i>
+                                        All consultation payments collected!
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Unpaid Lab Orders -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-flask"></i> Unpaid Lab Orders</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Order #</th>
+                                    <th>Patient</th>
+                                    <th>Ordered Date</th>
+                                    <th>Total Amount</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for order in unpaid_lab_orders %}
+                                <tr>
+                                    <td><span class="badge bg-primary">{{ order.order_number }}</span></td>
+                                    <td>{{ order.patient.get_full_name }}</td>
+                                    <td>{{ order.ordered_at|date:"M d, Y" }}</td>
+                                    <td><strong>৳{{ order.total_amount }}</strong></td>
+                                    <td><span class="badge bg-warning">{{ order.status }}</span></td>
+                                    <td>
+                                        <a href="{% url 'lab:order_detail' order.pk %}" class="btn btn-info btn-sm">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">
+                                        No unpaid lab orders
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

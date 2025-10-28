@@ -1,0 +1,133 @@
+================================================================================
+PRODUCTION ACCOUNTS - NAZIPURUHS HOSPITAL
+VPS DEPLOYMENT READY
+================================================================================
+
+Created: October 28, 2025
+Total Accounts: 9
+
+================================================================================
+ADMIN ACCOUNT
+================================================================================
+Username: 01332856000
+Password: 856000
+Email: admin@nazipuruhs.com
+Role: Administrator (Full Access)
+
+================================================================================
+DOCTOR ACCOUNTS
+================================================================================
+
+1. Dr. Shakera Sultana (ডাঃ শাকেরা সুলতানা)
+   Username: 01712765762
+   Password: 765762
+   Email: dr.shakera@nazipuruhs.com
+   Specialization: ক্যান্সার বিশেষজ্ঞ (Cancer Specialist)
+   License: DOC-001
+
+2. Dr. Khaja Mohammad (ডাঃ খাজা মোহাম্মদ)
+   Username: 01761338884
+   Password: 338884
+   Email: dr.khaja@nazipuruhs.com
+   Specialization: মেডিসিন বিশেষজ্ঞ (Medicine Specialist)
+   License: DOC-002
+
+3. Dr. Khalid Hosen (ডাঃ খালিদ হোসেন)
+   Username: 01312025152
+   Password: 025152
+   Email: dr.khalid@nazipuruhs.com
+   Specialization: সার্জন (Surgeon)
+   License: DOC-003
+
+4. Dr. Ayesha Siddika (ডাঃ আয়েশা ছিদ্দিকা)
+   Username: 01770928782
+   Password: 928782
+   Email: dr.ayesha@nazipuruhs.com
+   Specialization: প্রসূতি ও গাইনী বিশেষজ্ঞ (Obstetrics & Gynecology)
+   License: DOC-004
+
+================================================================================
+STAFF ACCOUNTS
+================================================================================
+
+RECEPTION DESK
+   Username: 01332856002
+   Password: 856002
+   Email: reception@nazipuruhs.com
+   Role: Receptionist
+
+CANTEEN
+   Username: 01332856015
+   Password: 856015
+   Email: canteen@nazipuruhs.com
+   Role: Canteen Staff
+
+PHARMACY
+   Username: 01332856016
+   Password: 856016
+   Email: pharmacy@nazipuruhs.com
+   Role: Pharmacy Staff
+
+LAB
+   Username: 01332856017
+   Password: 856017
+   Email: lab@nazipuruhs.com
+   Role: Lab Technician
+
+================================================================================
+QUICK LOGIN REFERENCE
+================================================================================
+
+Admin:      01332856000 / 856000
+
+Doctors:
+  Shakera:  01712765762 / 765762
+  Khaja:    01761338884 / 338884
+  Khalid:   01312025152 / 025152
+  Ayesha:   01770928782 / 928782
+
+Staff:
+  Reception: 01332856002 / 856002
+  Canteen:   01332856015 / 856015
+  Pharmacy:  01332856016 / 856016
+  Lab:       01332856017 / 856017
+
+================================================================================
+PASSWORD PATTERN
+================================================================================
+All passwords are the LAST 6 DIGITS of the phone number/username.
+Example: Username 01332856000 → Password 856000
+
+================================================================================
+VPS DEPLOYMENT COMMAND
+================================================================================
+To deploy these accounts to VPS, run:
+
+python manage.py shell < create_production_accounts.py
+
+This script will:
+- Create new accounts if they don't exist
+- Update existing accounts with correct details
+- Set passwords to last 6 digits of phone number
+- Ensure all roles are correctly assigned
+
+================================================================================
+SECURITY NOTES
+================================================================================
+1. All accounts use phone numbers as usernames for easy recall
+2. Passwords are last 6 digits of phone number for simplicity
+3. Users should change passwords after first login (future feature)
+4. Admin account has full system access
+5. Each role has specific permissions based on their function
+
+================================================================================
+ACCESS LEVELS
+================================================================================
+ADMIN:        Full system access, user management, all modules
+DOCTOR:       Patient records, appointments, prescriptions, lab orders
+RECEPTIONIST: Patient registration, appointments, billing
+LAB:          Lab tests, results entry, test management
+PHARMACY:     Medicine inventory, prescriptions, sales
+CANTEEN:      Canteen orders, billing, inventory
+
+================================================================================

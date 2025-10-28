@@ -29,6 +29,10 @@ urlpatterns = [
     
     # Lab Tests Management
     path('tests/', views.lab_test_list, name='test_list'),
+    path('tests/manage/', views.lab_test_manage, name='test_manage'),
+    path('tests/create/', views.lab_test_create, name='test_create'),
+    path('tests/<int:pk>/edit/', views.lab_test_edit, name='test_edit'),
+    path('tests/<int:pk>/delete/', views.lab_test_delete, name='test_delete'),
     
     # Legacy URLs (backward compatibility)
     path('', views.lab_order_list, name='lab_order_list'),

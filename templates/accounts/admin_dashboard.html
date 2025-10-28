@@ -114,23 +114,28 @@
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-3">
-                        <a href="{% url 'patients:patient_register' %}" class="btn btn-outline-primary w-100">
-                            <i class="bi bi-person-plus"></i><br>Register Patient
+                        <a href="{% url 'accounts:admin_finance' %}" class="btn btn-outline-success w-100 py-3">
+                            <i class="bi bi-cash-stack fs-3"></i><br><strong>Finance Management</strong>
                         </a>
                     </div>
                     <div class="col-md-3">
-                        <a href="{% url 'appointments:appointment_create' %}" class="btn btn-outline-success w-100">
-                            <i class="bi bi-calendar-plus"></i><br>New Appointment
+                        <a href="{% url 'accounts:pc_dashboard' %}" class="btn btn-outline-warning w-100 py-3">
+                            <i class="bi bi-cash-coin fs-3"></i><br><strong>PC Commission</strong>
                         </a>
                     </div>
                     <div class="col-md-3">
-                        <a href="{% url 'finance:financial_reports' %}" class="btn btn-outline-info w-100">
-                            <i class="bi bi-file-earmark-bar-graph"></i><br>View Reports
+                        <a href="{% url 'accounts:doctor_management' %}" class="btn btn-outline-primary w-100 py-3">
+                            <i class="bi bi-person-badge fs-3"></i><br><strong>Manage Doctors</strong>
                         </a>
                     </div>
                     <div class="col-md-3">
-                        <a href="/admin/" class="btn btn-outline-dark w-100">
-                            <i class="bi bi-gear"></i><br>System Settings
+                        <a href="{% url 'lab:test_manage' %}" class="btn btn-outline-info w-100 py-3">
+                            <i class="bi bi-flask fs-3"></i><br><strong>Lab Tests & Prices</strong>
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="{% url 'finance:financial_reports' %}" class="btn btn-outline-secondary w-100 py-3">
+                            <i class="bi bi-file-earmark-bar-graph fs-3"></i><br><strong>View Reports</strong>
                         </a>
                     </div>
                 </div>
@@ -139,3 +144,4 @@
     </div>
 </div>
 {% endblock %}
+

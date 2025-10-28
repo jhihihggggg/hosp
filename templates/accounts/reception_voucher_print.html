@@ -1,0 +1,258 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Voucher</title>
+    <style>
+        @media print {
+            @page { margin: 0.5cm; }
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .voucher-container {
+            border: 2px solid #333;
+            padding: 20px;
+            background: white;
+        }
+        
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #1565C0;
+            font-size: 28px;
+        }
+        
+        .header h2 {
+            margin: 5px 0;
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .voucher-title {
+            text-align: center;
+            background: #1565C0;
+            color: white;
+            padding: 10px;
+            margin: 20px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px;
+            border-bottom: 1px dashed #ddd;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .info-value {
+            color: #000;
+        }
+        
+        .amount-box {
+            background: #f0f8ff;
+            border: 2px solid #1565C0;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .amount-box .label {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .amount-box .amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1565C0;
+            margin: 10px 0;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #333;
+        }
+        
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+        }
+        
+        .signature-box {
+            text-align: center;
+            min-width: 200px;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin-bottom: 5px;
+            padding-top: 40px;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .print-button:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.print()" class="print-button no-print">
+        🖨️ Print Voucher
+    </button>
+
+    <div class="voucher-container">
+        <!-- Header -->
+        <div class="header">
+            <h1>ইউনিভার্সাল হেলথ সার্ভিসেস এন্ড ডায়াগনস্টিক</h1>
+            <h2>Universal Health Services & Diagnostic</h2>
+            <p style="margin: 5px 0; color: #666;">
+                Nazirpur, Bagerhat | Phone: 01XXXXXXXXX<br>
+                Email: info@universalhealth.com
+            </p>
+        </div>
+
+        <!-- Voucher Title -->
+        <div class="voucher-title">
+            PAYMENT VOUCHER / পেমেন্ট ভাউচার
+        </div>
+
+        <!-- Voucher Details -->
+        <div style="margin: 20px 0;">
+            <div class="info-row">
+                <span class="info-label">Voucher No:</span>
+                <span class="info-value">{{ appointment.id|stringformat:"06d" }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Date & Time:</span>
+                <span class="info-value">{{ print_date|date:"d M Y, h:i A" }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Serial Number:</span>
+                <span class="info-value"><strong>#{{ appointment.serial_number }}</strong></span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Patient Name:</span>
+                <span class="info-value"><strong>{{ appointment.patient.get_full_name }}</strong></span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Patient ID:</span>
+                <span class="info-value">{{ appointment.patient.patient_id }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Phone:</span>
+                <span class="info-value">{{ appointment.patient.phone }}</span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Doctor:</span>
+                <span class="info-value"><strong>Dr. {{ appointment.doctor.get_full_name }}</strong></span>
+            </div>
+            
+            <div class="info-row">
+                <span class="info-label">Appointment Date:</span>
+                <span class="info-value">{{ appointment.appointment_date|date:"d M Y" }}</span>
+            </div>
+        </div>
+
+        <!-- Amount Box -->
+        <div class="amount-box">
+            <div class="label">CONSULTATION FEE / পরামর্শ ফি</div>
+            <div class="amount">৳{{ appointment.consultation_fee }}</div>
+            {% if pc_transaction %}
+            <div style="font-size: 12px; color: #666; margin-top: 10px;">
+                <strong>PC Commission:</strong> {{ pc_transaction.commission_percentage }}% 
+                (৳{{ pc_transaction.commission_amount }})<br>
+                <strong>Hospital Share:</strong> ৳{{ pc_transaction.admin_amount }}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Payment Information -->
+        <div style="background: #f9f9f9; padding: 15px; margin: 20px 0; border-left: 4px solid #1565C0;">
+            <strong>Payment Status:</strong> 
+            <span style="color: #28a745; font-weight: bold;">✓ PAID</span>
+            {% if pc_transaction %}
+            <br><strong>PC Code:</strong> {{ pc_transaction.pc_member.pc_code }}
+            <br><strong>PC Member:</strong> {{ pc_transaction.pc_member.name }}
+            {% endif %}
+        </div>
+
+        <!-- Instructions -->
+        <div style="background: #fff3cd; padding: 10px; margin: 20px 0; border: 1px solid #ffc107;">
+            <strong>Instructions / নির্দেশনা:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li>Please keep this voucher for your records</li>
+                <li>Show this voucher to the doctor</li>
+                <li>Serial will be called when your turn comes</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="signature-section">
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <strong>Patient Signature</strong>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-line"></div>
+                    <strong>Reception Signature</strong>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 30px; color: #666; font-size: 12px;">
+                <p>Thank you for choosing Universal Health Services!</p>
+                <p>For emergency: Call 999 | Hotline: 01XXXXXXXXX</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto print on load
+        window.onload = function() {
+            // window.print();
+        };
+    </script>
+</body>
+</html>

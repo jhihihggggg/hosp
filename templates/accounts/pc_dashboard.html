@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+
+{% block title %}PC Commission Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-cash-coin"></i> PC Commission Dashboard</h2>
+    <div>
+        <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addMemberModal">
+            <i class="bi bi-person-plus"></i> Add PC Member
+        </button>
+        <a href="{% url 'accounts:admin_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Admin Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total PC Members</h6>
+                        <h3 class="mb-0">{{ total_members }}</h3>
+                    </div>
+                    <div class="text-primary fs-1">
+                        <i class="bi bi-people"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Commission</h6>
+                        <h3 class="mb-0">৳{{ total_commission|floatformat:2 }}</h3>
+                    </div>
+                    <div class="text-success fs-1">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Today's Transactions</h6>
+                        <h3 class="mb-0">{{ today_transactions }}</h3>
+                    </div>
+                    <div class="text-warning fs-1">
+                        <i class="bi bi-receipt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Admin Revenue</h6>
+                        <h3 class="mb-0">৳{{ admin_revenue|floatformat:2 }}</h3>
+                    </div>
+                    <div class="text-info fs-1">
+                        <i class="bi bi-bank"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Member Type Breakdown -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-circle-fill text-secondary"></i> General Members</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Count:</strong> {{ general_count }}</p>
+                <p class="mb-2"><strong>Fixed Commission:</strong> <span class="badge bg-success fs-6">30%</span></p>
+                <p class="mb-2"><strong>Total Earned:</strong> ৳{{ general_commission|floatformat:2 }}</p>
+                <p class="mb-3"><strong>Code Range:</strong> 1xxxx (10001-19999)</p>
+                <a href="{% url 'accounts:pc_member_list' 'GENERAL' %}" class="btn btn-secondary w-100">
+                    <i class="bi bi-eye"></i> View General Members
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header" style="background-color: #cfe2ff;">
+                <h5 class="mb-0"><i class="bi bi-circle-fill text-primary"></i> Lifetime Members</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Count:</strong> {{ lifetime_count }}</p>
+                <p class="mb-2"><strong>Fixed Commission:</strong> <span class="badge bg-primary fs-6">35%</span></p>
+                <p class="mb-2"><strong>Total Earned:</strong> ৳{{ lifetime_commission|floatformat:2 }}</p>
+                <p class="mb-3"><strong>Code Range:</strong> 2xxxx (20001-29999)</p>
+                <a href="{% url 'accounts:pc_member_list' 'LIFETIME' %}" class="btn btn-primary w-100">
+                    <i class="bi bi-eye"></i> View Lifetime Members
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-header" style="background-color: #d1e7dd;">
+                <h5 class="mb-0"><i class="bi bi-circle-fill text-success"></i> Investor Members</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>Count:</strong> {{ investor_count }}</p>
+                <p class="mb-2"><strong>Fixed Commission:</strong> <span class="badge bg-success fs-6">50%</span></p>
+                <p class="mb-2"><strong>Total Earned:</strong> ৳{{ investor_commission|floatformat:2 }}</p>
+                <p class="mb-3"><strong>Code Range:</strong> 3xxxx (30001-39999)</p>
+                <a href="{% url 'accounts:pc_member_list' 'INVESTOR' %}" class="btn btn-success w-100">
+                    <i class="bi bi-eye"></i> View Investor Members
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="card">
+    <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history"></i> Recent Transactions</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Transaction #</th>
+                        <th>PC Code</th>
+                        <th>Member Name</th>
+                        <th>Type</th>
+                        <th>Total Amount</th>
+                        <th>Commission</th>
+                        <th>Admin Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for txn in recent_transactions %}
+                    <tr>
+                        <td><strong>{{ txn.transaction_number }}</strong></td>
+                        <td><span class="badge bg-secondary">{{ txn.pc_member.pc_code }}</span></td>
+                        <td>{{ txn.pc_member.name }}</td>
+                        <td>
+                            {% if txn.pc_member.member_type == 'GENERAL' %}
+                                <span class="badge bg-light text-dark">General</span>
+                            {% elif txn.pc_member.member_type == 'LIFETIME' %}
+                                <span class="badge bg-primary">Lifetime</span>
+                            {% else %}
+                                <span class="badge bg-success">Investor</span>
+                            {% endif %}
+                        </td>
+                        <td>৳{{ txn.total_amount|floatformat:2 }}</td>
+                        <td class="text-success">৳{{ txn.commission_amount|floatformat:2 }}</td>
+                        <td class="text-info">৳{{ txn.admin_amount|floatformat:2 }}</td>
+                        <td>{{ txn.transaction_date|date:"d M Y, h:i A" }}</td>
+                        <td>
+                            {% if txn.is_paid_to_member %}
+                                <span class="badge bg-success">Paid</span>
+                            {% else %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center text-muted">No transactions yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% if recent_transactions %}
+        <div class="text-end mt-3">
+            <a href="{% url 'accounts:pc_dashboard' %}" class="btn btn-outline-primary">Refresh Dashboard</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add PC Member Modal -->
+<div class="modal fade" id="addMemberModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="post" action="{% url 'accounts:pc_member_create' %}">
+                {% csrf_token %}
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-plus"></i> Add New PC Member
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-person"></i> Name <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-phone"></i> Phone <span class="text-danger">*</span></label>
+                        <input type="tel" class="form-control" name="phone" placeholder="01XXXXXXXXX" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-tag"></i> Category <span class="text-danger">*</span></label>
+                        <select class="form-select" name="member_type" id="memberTypeSelect" required>
+                            <option value="">Select Category</option>
+                            <option value="GENERAL">General Member - 30% Commission</option>
+                            <option value="LIFETIME">Lifetime Member - 35% Commission</option>
+                            <option value="INVESTOR">Investor Member - 50% Commission</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-envelope"></i> Email (Optional)</label>
+                        <input type="email" class="form-control" name="email" placeholder="example@email.com">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-geo-alt"></i> Address (Optional)</label>
+                        <textarea class="form-control" name="address" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label"><i class="bi bi-sticky"></i> Notes (Optional)</label>
+                        <textarea class="form-control" name="notes" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info mb-0">
+                        <small>
+                            <i class="bi bi-info-circle"></i> 
+                            Commission percentages are fixed based on category:
+                            <ul class="mb-0 mt-2">
+                                <li>General: <strong>30%</strong></li>
+                                <li>Lifetime: <strong>35%</strong></li>
+                                <li>Investor: <strong>50%</strong></li>
+                            </ul>
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success" id="submitMemberBtn">
+                        <i class="bi bi-check-circle"></i> Add Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form validation for Add PC Member
+document.addEventListener('DOMContentLoaded', function() {
+    const memberForm = document.querySelector('#addMemberModal form');
+    const submitBtn = document.getElementById('submitMemberBtn');
+    
+    if (memberForm) {
+        memberForm.addEventListener('submit', function(e) {
+            const memberTypeSelect = document.querySelector('select[name="member_type"]');
+            const nameInput = document.querySelector('input[name="name"]');
+            const phoneInput = document.querySelector('input[name="phone"]');
+            
+            const memberType = memberTypeSelect ? memberTypeSelect.value.trim() : '';
+            const name = nameInput ? nameInput.value.trim() : '';
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+            
+            console.log('Form submit - member_type:', memberType, 'name:', name, 'phone:', phone);
+            
+            if (!memberType || memberType === '') {
+                e.preventDefault();
+                alert('Please select a member category!');
+                return false;
+            }
+            
+            if (!name || name === '') {
+                e.preventDefault();
+                alert('Please enter member name!');
+                return false;
+            }
+            
+            if (!phone || phone === '') {
+                e.preventDefault();
+                alert('Please enter phone number!');
+                return false;
+            }
+            
+            // Disable submit button to prevent double submission
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+            }
+            
+            return true;
+        });
+    }
+    
+    // Reset form when modal is closed
+    const addMemberModal = document.getElementById('addMemberModal');
+    if (addMemberModal) {
+        addMemberModal.addEventListener('hidden.bs.modal', function () {
+            const form = this.querySelector('form');
+            if (form) {
+                form.reset();
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Add Member';
+            }
+        });
+    }
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.025);
+}
+</style>
+{% endblock %}

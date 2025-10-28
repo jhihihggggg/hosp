@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ type_info.name }} PC Members{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-circle-fill text-{{ type_info.color }}"></i> 
+        {{ type_info.name }} PC Members ({{ type_info.percentage }}% Commission)
+    </h2>
+    <div>
+        <a href="{% url 'accounts:pc_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-{{ type_info.color }} text-white">
+            <div class="card-body">
+                <h6 class="text-white-50 mb-2">Total Members</h6>
+                <h3 class="mb-0">{{ total_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h6 class="text-white-50 mb-2">Active Members</h6>
+                <h3 class="mb-0">{{ active_count }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h6 class="text-white-50 mb-2">Commission Rate</h6>
+                <h3 class="mb-0">{{ type_info.percentage }}%</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <h6 class="text-dark-50 mb-2">Total Earned</h6>
+                <h3 class="mb-0">৳{{ total_commission|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <form method="get" class="input-group">
+            <input type="text" name="search" class="form-control" 
+                   placeholder="Search by name, PC code, or phone..." 
+                   value="{{ search }}">
+            <button class="btn btn-{{ type_info.color }}" type="submit">
+                <i class="bi bi-search"></i> Search
+            </button>
+            {% if search %}
+            <a href="{% url 'accounts:pc_member_list' member_type %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Members Table -->
+<div class="card">
+    <div class="card-header bg-{{ type_info.color }} text-white">
+        <h5 class="mb-0">
+            <i class="bi bi-people"></i> {{ type_info.name }} Members List
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if members %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>PC Code</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Commission %</th>
+                        <th>Referrals</th>
+                        <th>Due Amount</th>
+                        <th>Total Earned</th>
+                        <th>Joined</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td><span class="badge bg-{{ type_info.color }} fs-6">{{ member.pc_code }}</span></td>
+                        <td><strong>{{ member.name }}</strong></td>
+                        <td>
+                            <i class="bi bi-phone"></i> {{ member.phone }}
+                        </td>
+                        <td>
+                            {% if member.email %}
+                                <i class="bi bi-envelope"></i> {{ member.email }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-success">{{ member.commission_percentage }}%</span></td>
+                        <td>
+                            <span class="badge bg-primary">{{ member.total_referrals }}</span>
+                        </td>
+                        <td class="text-warning">
+                            <strong>৳{{ member.due_amount|floatformat:2 }}</strong>
+                        </td>
+                        <td class="text-success">
+                            <strong>৳{{ member.total_commission_earned|floatformat:2 }}</strong>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ member.created_at|date:"d M Y" }}
+                            </small>
+                        </td>
+                        <td>
+                            {% if member.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'accounts:pc_member_detail' member.pc_code %}" 
+                               class="btn btn-sm btn-outline-primary" 
+                               title="View Details">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'accounts:pc_transaction_create' %}?member={{ member.pk }}" 
+                               class="btn btn-sm btn-success" 
+                               title="Add Transaction">
+                                <i class="bi bi-plus-circle"></i>
+                            </a>
+                            {% if member.due_amount > 0 %}
+                            <button type="button"
+                                    class="btn btn-sm btn-warning"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#payModal{{ member.pc_code }}"
+                                    title="Mark as Paid (৳{{ member.due_amount|floatformat:2 }})">
+                                <i class="bi bi-cash-coin"></i> Paid
+                            </button>
+                            
+                            <!-- Payment Confirmation Modal -->
+                            <div class="modal fade" id="payModal{{ member.pc_code }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-warning">
+                                            <h5 class="modal-title">
+                                                <i class="bi bi-cash-coin"></i> Confirm Payment
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            <div class="mb-3">
+                                                <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
+                                            </div>
+                                            <h5>{{ member.name }}</h5>
+                                            <p class="text-muted mb-2">PC Code: <strong>{{ member.pc_code }}</strong></p>
+                                            <div class="alert alert-warning">
+                                                <h4 class="mb-0">৳{{ member.due_amount|floatformat:2 }}</h4>
+                                                <small>Total Due Amount</small>
+                                            </div>
+                                            <p class="mb-0">Mark this amount as paid to the member?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                <i class="bi bi-x-circle"></i> Cancel
+                                            </button>
+                                            <a href="{% url 'accounts:pc_mark_paid' member.pc_code %}" 
+                                               class="btn btn-warning">
+                                                <i class="bi bi-check-circle"></i> Confirm Payment
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="bi bi-inbox fs-1 mb-3 d-block"></i>
+            <p class="mb-0">
+                {% if search %}
+                    No members found matching "{{ search }}".
+                {% else %}
+                    No {{ type_info.name|lower }} members yet.
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Info Box -->
+<div class="alert alert-info mt-4">
+    <h6 class="alert-heading"><i class="bi bi-info-circle"></i> {{ type_info.name }} Member Information</h6>
+    <p class="mb-0">
+        <strong>Commission Rate:</strong> Fixed {{ type_info.percentage }}% on all referrals<br>
+        <strong>Code Range:</strong> 
+        {% if member_type == 'GENERAL' %}
+            1xxxx (10001-19999)
+        {% elif member_type == 'LIFETIME' %}
+            2xxxx (20001-29999)
+        {% elif member_type == 'INVESTOR' %}
+            3xxxx (30001-39999)
+        {% endif %}
+        <br>
+        <strong>Actions:</strong> Click "Paid" button to mark all unpaid commissions as paid and reset balance to ৳0.
+    </p>
+</div>
+
+<style>
+.table-hover tbody tr:hover {
+    background-color: rgba(0,0,0,0.025);
+}
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+</style>
+{% endblock %}

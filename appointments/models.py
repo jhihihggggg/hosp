@@ -6,12 +6,12 @@ class Appointment(models.Model):
     """Appointment/Queue management"""
     
     STATUS_CHOICES = [
-        ('WAITING', 'Waiting'),
-        ('CALLED', 'Called'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
-        ('NO_SHOW', 'No Show'),
+        ('waiting', 'Waiting'),
+        ('called', 'Called'),
+        ('in_consultation', 'In Consultation'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('no_show', 'No Show'),
     ]
     
     # Appointment details
@@ -30,11 +30,26 @@ class Appointment(models.Model):
     appointment_time = models.TimeField(null=True, blank=True)
     
     # Status and tracking
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='WAITING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='waiting')
     check_in_time = models.DateTimeField(auto_now_add=True)
     called_time = models.DateTimeField(null=True, blank=True)
     started_time = models.DateTimeField(null=True, blank=True)
     completed_time = models.DateTimeField(null=True, blank=True)
+    
+    # Payment information
+    consultation_fee = models.DecimalField(max_digits=10, decimal_places=2, default=500)
+    payment_status = models.CharField(max_length=20, choices=[
+        ('unpaid', 'Unpaid'),
+        ('paid', 'Paid'),
+        ('partial', 'Partial'),
+    ], default='unpaid')
+    
+    # Appointment type
+    appointment_type = models.CharField(max_length=20, choices=[
+        ('walk_in', 'Walk-in'),
+        ('scheduled', 'Scheduled'),
+        ('emergency', 'Emergency'),
+    ], default='walk_in')
     
     # Additional information
     reason = models.TextField(blank=True, help_text="Reason for visit")
@@ -93,21 +108,21 @@ class Appointment(models.Model):
     def call_next(self):
         """Mark this appointment as called"""
         from django.utils import timezone
-        self.status = 'CALLED'
+        self.status = 'called'
         self.called_time = timezone.now()
         self.save()
     
     def start_consultation(self):
         """Start the consultation"""
         from django.utils import timezone
-        self.status = 'IN_PROGRESS'
+        self.status = 'in_consultation'
         self.started_time = timezone.now()
         self.save()
     
     def complete(self):
         """Complete the appointment"""
         from django.utils import timezone
-        self.status = 'COMPLETED'
+        self.status = 'completed'
         self.completed_time = timezone.now()
         self.save()
 

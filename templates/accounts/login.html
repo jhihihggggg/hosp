@@ -19,6 +19,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             overflow: hidden;
+            max-width: 450px;
         }
         .login-header {
             background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
@@ -27,18 +28,33 @@
             text-align: center;
         }
         .login-body {
-            padding: 2rem;
+            padding: 2.5rem;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 0.75rem;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-md-5">
+            <div class="col-md-10 col-lg-8">
                 <div class="login-card">
                     <div class="login-header">
                         <h2><i class="bi bi-hospital"></i> DiagCenter</h2>
-                        <p class="mb-0">Multi-User Management System</p>
+                        <p class="mb-0">Hospital Management System</p>
                     </div>
                     <div class="login-body">
                         <h4 class="text-center mb-4">Sign In</h4>
@@ -51,39 +67,6 @@
                         </div>
                         {% endfor %}
                         {% endif %}
-                        
-                        <!-- Quick Access Buttons -->
-                        <div class="mb-4">
-                            <div class="alert alert-warning small mb-3">
-                                <i class="bi bi-exclamation-triangle"></i> <strong>Development Mode:</strong> Just click any button to login
-                            </div>
-                            <p class="text-center mb-2 small text-muted">Quick Login As:</p>
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <a href="/test-admin/" class="btn btn-outline-primary btn-sm w-100">
-                                        <i class="bi bi-shield-lock"></i> Admin
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="/test-doctor/" class="btn btn-outline-success btn-sm w-100">
-                                        <i class="bi bi-person-heart"></i> Doctor
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="/test-reception/" class="btn btn-outline-info btn-sm w-100">
-                                        <i class="bi bi-person-badge"></i> Reception
-                                    </a>
-                                </div>
-                                <div class="col-6">
-                                    <a href="/test-display/" class="btn btn-outline-warning btn-sm w-100">
-                                        <i class="bi bi-tv"></i> Display
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-3">
-                        <p class="text-center text-muted small">Or login manually:</p>
 
                         <form method="post" id="loginForm">
                             {% csrf_token %}
@@ -91,26 +74,34 @@
                                 <label for="username" class="form-label">
                                     <i class="bi bi-person"></i> Username
                                 </label>
-                                <input type="text" class="form-control" id="username" name="username">
+                                <input type="text" 
+                                       class="form-control form-control-lg" 
+                                       id="username" 
+                                       name="username" 
+                                       required 
+                                       autofocus
+                                       placeholder="Enter your username">
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-4">
                                 <label for="password" class="form-label">
-                                    <i class="bi bi-lock"></i> Password (optional in dev mode)
+                                    <i class="bi bi-lock"></i> Password
                                 </label>
-                                <input type="password" class="form-control" id="password" name="password">
+                                <input type="password" 
+                                       class="form-control form-control-lg" 
+                                       id="password" 
+                                       name="password" 
+                                       required
+                                       placeholder="Enter your password">
                             </div>
-                            <div class="mb-3 form-check">
-                                <input type="checkbox" class="form-check-input" id="remember">
-                                <label class="form-check-label" for="remember">Remember me</label>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100 py-2">
+                            <button type="submit" class="btn btn-primary btn-login w-100">
                                 <i class="bi bi-box-arrow-in-right"></i> Sign In
                             </button>
                         </form>
                         
                         <div class="mt-4 text-center">
                             <small class="text-muted">
-                                Role-based access for Admin, Doctor, Receptionist, Lab & Pharmacy Staff
+                                <i class="bi bi-shield-check"></i> 
+                                Secure role-based access for hospital staff
                             </small>
                         </div>
                     </div>

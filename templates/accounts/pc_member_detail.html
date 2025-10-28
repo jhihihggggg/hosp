@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.name }} - PC Member Details{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-person-badge"></i> PC Member Details</h2>
+    <div>
+        <a href="{% url 'accounts:pc_member_list' member.member_type %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to {{ member.get_member_type_display }} List
+        </a>
+        <a href="{% url 'accounts:pc_transaction_create' %}?member={{ member.pk }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Add Transaction
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Member Info Card -->
+    <div class="col-lg-4">
+        <div class="card 
+            {% if member.member_type == 'GENERAL' %}border-secondary
+            {% elif member.member_type == 'LIFETIME' %}border-primary
+            {% else %}border-success{% endif %}">
+            
+            <div class="card-header 
+                {% if member.member_type == 'GENERAL' %}bg-light
+                {% elif member.member_type == 'LIFETIME' %}bg-primary bg-opacity-10
+                {% else %}bg-success bg-opacity-10{% endif %}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="badge 
+                        {% if member.member_type == 'GENERAL' %}bg-secondary
+                        {% elif member.member_type == 'LIFETIME' %}bg-primary
+                        {% else %}bg-success{% endif %} fs-5">
+                        {{ member.pc_code }}
+                    </span>
+                    {% if member.is_active %}
+                        <span class="badge bg-success">Active</span>
+                    {% else %}
+                        <span class="badge bg-danger">Inactive</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <i class="bi 
+                        {% if member.member_type == 'GENERAL' %}bi-person text-secondary
+                        {% elif member.member_type == 'LIFETIME' %}bi-star text-primary
+                        {% else %}bi-cash-stack text-success{% endif %} 
+                        fs-1"></i>
+                    <h4 class="mt-2 mb-1">{{ member.name }}</h4>
+                    <p class="text-muted">{{ member.get_member_type_display }}</p>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">Contact Information</h6>
+                    <p class="mb-1"><i class="bi bi-telephone"></i> {{ member.phone }}</p>
+                    {% if member.email %}
+                    <p class="mb-1"><i class="bi bi-envelope"></i> {{ member.email }}</p>
+                    {% endif %}
+                    {% if member.address %}
+                    <p class="mb-0"><i class="bi bi-geo-alt"></i> {{ member.address }}</p>
+                    {% endif %}
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">Commission Details</h6>
+                    <p class="mb-2">
+                        <strong>Commission Rate:</strong> 
+                        <span class="badge bg-success fs-6">{{ member.commission_percentage }}%</span>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Member Since:</strong> {{ member.created_at|date:"d M Y" }}
+                    </p>
+                </div>
+                
+                {% if member.notes %}
+                <hr>
+                <div>
+                    <h6 class="text-muted mb-2">Notes</h6>
+                    <p class="mb-0">{{ member.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics -->
+    <div class="col-lg-8">
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h6 class="mb-2">Total Commission</h6>
+                        <h3 class="mb-0">৳{{ member.total_commission_earned|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h6 class="mb-2">Total Referrals</h6>
+                        <h3 class="mb-0">{{ member.total_referrals }}</h3>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <h6 class="mb-2">Pending Payments</h6>
+                        <h3 class="mb-0">৳{{ unpaid_total|floatformat:2 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transaction History -->
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-receipt"></i> Transaction History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Transaction #</th>
+                                <th>Date</th>
+                                <th>Total Amount</th>
+                                <th>Commission</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in transactions %}
+                            <tr>
+                                <td><strong>{{ txn.transaction_number }}</strong></td>
+                                <td>{{ txn.transaction_date|date:"d M Y" }}</td>
+                                <td>৳{{ txn.total_amount|floatformat:2 }}</td>
+                                <td class="text-success">
+                                    <strong>৳{{ txn.commission_amount|floatformat:2 }}</strong>
+                                    <small class="text-muted">({{ txn.commission_percentage }}%)</small>
+                                </td>
+                                <td>
+                                    {% if txn.is_paid_to_member %}
+                                        <span class="badge bg-success">Paid</span>
+                                        <br><small class="text-muted">{{ txn.paid_at|date:"d M Y" }}</small>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if txn.patient %}
+                                        <a href="#" class="btn btn-sm btn-outline-info" title="View Patient">
+                                            <i class="bi bi-person"></i>
+                                        </a>
+                                    {% endif %}
+                                    {% if txn.appointment %}
+                                        <a href="#" class="btn btn-sm btn-outline-primary" title="View Appointment">
+                                            <i class="bi bi-calendar"></i>
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    No transactions yet
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Monthly Summary -->
+        <div class="card mt-4">
+            <div class="card-header bg-white">
+                <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Monthly Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Referrals</th>
+                                <th>Commission Earned</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for month_data in monthly_summary %}
+                            <tr>
+                                <td>{{ month_data.month|date:"F Y" }}</td>
+                                <td>{{ month_data.count }}</td>
+                                <td class="text-success">৳{{ month_data.total|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">No data available</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+}
+</style>
+{% endblock %}

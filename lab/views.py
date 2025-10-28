@@ -11,6 +11,7 @@ from datetime import timedelta
 import json
 
 from .models import LabTest, LabOrder, LabResult
+from .forms import LabTestForm
 from patients.models import Patient
 
 
@@ -280,3 +281,83 @@ def quality_control_view(request):
         ],
     }
     return render(request, 'lab/quality_control.html', context)
+
+
+# ========== LAB TEST MANAGEMENT (ADMIN) ==========
+
+@login_required
+def lab_test_manage(request):
+    """Manage lab tests (Admin only)"""
+    if request.user.role != 'ADMIN':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('accounts:dashboard')
+    
+    tests = LabTest.objects.all().order_by('category', 'test_name')
+    context = {
+        'tests': tests,
+        'total_tests': tests.count(),
+        'active_tests': tests.filter(is_active=True).count(),
+    }
+    return render(request, 'lab/lab_test_manage.html', context)
+
+
+@login_required
+def lab_test_create(request):
+    """Create new lab test (Admin only)"""
+    if request.user.role != 'ADMIN':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('accounts:dashboard')
+    
+    if request.method == 'POST':
+        form = LabTestForm(request.POST)
+        if form.is_valid():
+            test = form.save()
+            messages.success(request, f'Lab test "{test.test_name}" created successfully!')
+            return redirect('lab:test_manage')
+    else:
+        form = LabTestForm()
+    
+    return render(request, 'lab/lab_test_form.html', {'form': form, 'action': 'Create'})
+
+
+@login_required
+def lab_test_edit(request, pk):
+    """Edit lab test (Admin only)"""
+    if request.user.role != 'ADMIN':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('accounts:dashboard')
+    
+    test = get_object_or_404(LabTest, pk=pk)
+    
+    if request.method == 'POST':
+        form = LabTestForm(request.POST, instance=test)
+        if form.is_valid():
+            test = form.save()
+            messages.success(request, f'Lab test "{test.test_name}" updated successfully!')
+            return redirect('lab:test_manage')
+    else:
+        form = LabTestForm(instance=test)
+    
+    return render(request, 'lab/lab_test_form.html', {
+        'form': form,
+        'action': 'Edit',
+        'test': test
+    })
+
+
+@login_required
+def lab_test_delete(request, pk):
+    """Delete/deactivate lab test (Admin only)"""
+    if request.user.role != 'ADMIN':
+        messages.error(request, 'Access denied. Admin only.')
+        return redirect('accounts:dashboard')
+    
+    test = get_object_or_404(LabTest, pk=pk)
+    
+    if request.method == 'POST':
+        test.is_active = False
+        test.save()
+        messages.success(request, f'Lab test "{test.test_name}" deactivated successfully!')
+        return redirect('lab:test_manage')
+    
+    return render(request, 'lab/lab_test_confirm_delete.html', {'test': test})

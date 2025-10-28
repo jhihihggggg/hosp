@@ -1,0 +1,230 @@
+{% extends 'base.html' %}
+
+{% block title %}Add PC Transaction{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-plus-circle"></i> Record PC Transaction</h2>
+    <a href="{% url 'accounts:pc_dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body p-4">
+                <form method="post" id="transactionForm">
+                    {% csrf_token %}
+                    
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <!-- PC Member Selection -->
+                    <div class="mb-4">
+                        <label for="pc_code" class="form-label fw-bold">
+                            <i class="bi bi-person-badge"></i> PC Code *
+                        </h6>
+                        <div class="input-group">
+                            <input type="text" class="form-control form-control-lg" id="pc_code" 
+                                   name="pc_code" placeholder="Enter PC Code (e.g., 10001, 20001, 30001)" 
+                                   value="{{ selected_member.pc_code }}" required>
+                            <button class="btn btn-primary" type="button" onclick="lookupPCCode()">
+                                <i class="bi bi-search"></i> Lookup
+                            </button>
+                        </div>
+                        <small class="text-muted">Enter the 5-digit PC member's code to verify</small>
+                    </div>
+                    
+                    <!-- Member Info Display (shown after lookup) -->
+                    <div id="memberInfo" class="mb-4" style="display: {% if selected_member %}block{% else %}none{% endif %};">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 class="mb-1" id="memberName">{{ selected_member.name }}</h5>
+                                        <p class="mb-1 text-muted">
+                                            <span id="memberType">{{ selected_member.get_member_type_display }}</span> | 
+                                            <span id="memberPhone">{{ selected_member.phone }}</span>
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Commission Rate:</strong> 
+                                            <span class="badge bg-success" id="memberCommission">{{ selected_member.commission_percentage }}%</span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <small class="text-muted d-block">Total Earned</small>
+                                        <h4 class="text-success mb-0" id="memberTotal">৳{{ selected_member.total_commission_earned|floatformat:2 }}</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Transaction Details -->
+                    <h5 class="mb-3"><i class="bi bi-cash"></i> Transaction Details</h5>
+                    
+                    <div class="mb-4">
+                        <label for="total_amount" class="form-label">Total Amount *</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">৳</span>
+                            <input type="number" class="form-control" id="total_amount" name="total_amount" 
+                                   step="0.01" min="0" required onchange="calculateCommission()">
+                        </div>
+                    </div>
+                    
+                    <!-- Commission Calculation Preview -->
+                    <div id="calculationPreview" class="mb-4" style="display: none;">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-calculator"></i> Commission Calculation</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">Total Amount</small>
+                                        <h4 id="previewTotal">৳0.00</h4>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">PC Commission (<span id="previewRate">0</span>%)</small>
+                                        <h4 class="text-success" id="previewCommission">৳0.00</h4>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">Admin Amount</small>
+                                        <h4 class="text-info" id="previewAdmin">৳0.00</h4>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Optional: Patient Reference -->
+                    <div class="mb-3">
+                        <label for="patient_id" class="form-label">Patient ID (Optional)</label>
+                        <input type="text" class="form-control" id="patient_id" name="patient_id" 
+                               placeholder="If this is linked to a patient">
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Any additional details about this transaction..."></textarea>
+                    </div>
+                    
+                    <!-- Payment Status -->
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="is_paid_to_member" name="is_paid_to_member">
+                        <label class="form-check-label" for="is_paid_to_member">
+                            Mark as paid to PC member now
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'accounts:pc_dashboard' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn" disabled>
+                            <i class="bi bi-check-circle"></i> Record Transaction
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Quick Guide -->
+        <div class="card mt-4 bg-light">
+            <div class="card-body">
+                <h6><i class="bi bi-info-circle"></i> How to record a PC transaction:</h6>
+                <ol class="mb-0">
+                    <li>Enter or scan the PC member's code</li>
+                    <li>Click "Lookup" to verify the member</li>
+                    <li>Enter the total transaction amount</li>
+                    <li>Review the commission calculation</li>
+                    <li>Add any notes if needed</li>
+                    <li>Submit to record the transaction</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentMember = {% if selected_member %}{{ selected_member.pk }}{% else %}null{% endif %};
+let commissionRate = {% if selected_member %}{{ selected_member.commission_percentage }}{% else %}0{% endif %};
+
+function lookupPCCode() {
+    const pcCode = document.getElementById('pc_code').value.trim();
+    if (!pcCode) {
+        alert('Please enter a PC code');
+        return;
+    }
+    
+    // Make AJAX request to lookup PC member
+    fetch(`/accounts/api/pc-lookup/?code=${pcCode}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Display member info
+                document.getElementById('memberName').textContent = data.member.name;
+                document.getElementById('memberType').textContent = data.member.type;
+                document.getElementById('memberPhone').textContent = data.member.phone;
+                document.getElementById('memberCommission').textContent = data.member.commission + '%';
+                document.getElementById('memberTotal').textContent = '৳' + parseFloat(data.member.total).toFixed(2);
+                document.getElementById('memberInfo').style.display = 'block';
+                
+                currentMember = data.member.id;
+                commissionRate = parseFloat(data.member.commission);
+                
+                // Enable submit button
+                document.getElementById('submitBtn').disabled = false;
+                
+                // Calculate commission if amount is already entered
+                calculateCommission();
+            } else {
+                alert('PC Code not found or inactive');
+                document.getElementById('memberInfo').style.display = 'none';
+                document.getElementById('submitBtn').disabled = true;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error looking up PC code');
+        });
+}
+
+function calculateCommission() {
+    const totalAmount = parseFloat(document.getElementById('total_amount').value);
+    
+    if (!totalAmount || totalAmount <= 0 || !currentMember) {
+        document.getElementById('calculationPreview').style.display = 'none';
+        return;
+    }
+    
+    const commissionAmount = (totalAmount * commissionRate) / 100;
+    const adminAmount = totalAmount - commissionAmount;
+    
+    document.getElementById('previewTotal').textContent = '৳' + totalAmount.toFixed(2);
+    document.getElementById('previewRate').textContent = commissionRate;
+    document.getElementById('previewCommission').textContent = '৳' + commissionAmount.toFixed(2);
+    document.getElementById('previewAdmin').textContent = '৳' + adminAmount.toFixed(2);
+    document.getElementById('calculationPreview').style.display = 'block';
+}
+
+// Enable enter key to trigger lookup
+document.getElementById('pc_code').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        lookupPCCode();
+    }
+});
+</script>
+{% endblock %}

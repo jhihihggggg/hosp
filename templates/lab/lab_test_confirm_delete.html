@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Deactivate Lab Test{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Confirm Deactivation</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Are you sure you want to deactivate this lab test?</p>
+                    
+                    <div class="alert alert-info">
+                        <h6><strong>{{ test.test_name }}</strong></h6>
+                        <p class="mb-1"><strong>Code:</strong> {{ test.test_code }}</p>
+                        <p class="mb-1"><strong>Category:</strong> {{ test.get_category_display }}</p>
+                        <p class="mb-0"><strong>Price:</strong> ৳{{ test.price }}</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> <strong>Note:</strong> 
+                        This test will be deactivated and won't be available for new orders. 
+                        Existing orders with this test will not be affected.
+                    </div>
+
+                    <form method="post" class="d-flex justify-content-between">
+                        {% csrf_token %}
+                        <a href="{% url 'lab:test_manage' %}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-check-circle"></i> Yes, Deactivate
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
